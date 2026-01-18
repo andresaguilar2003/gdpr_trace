@@ -1,0 +1,22 @@
+# gdpr/vocabulary.py
+
+GDPR_EVENTS = {
+    "SEND_DATA": "gdpr:sendData",
+    "CONSENT_EXPIRED": "gdpr:consentExpired",
+    "INFORM": "gdpr:informUser",
+    "CONSENT": "gdpr:giveConsent",
+    "READ": "gdpr:readData",
+    "WRITE": "gdpr:writeData",
+    "ACCESS_LOG": "gdpr:accessLog",
+    "REQUEST_INFO": "gdpr:requestInfo",
+    "PROVIDE_INFO": "gdpr:provideInfo",
+    "WITHDRAW": "gdpr:withdrawConsent",
+    "ERASE": "gdpr:eraseData",
+    "BREACH": "gdpr:detectBreach",
+    "NOTIFY_BREACH": "gdpr:notifyBreach",
+    "RECTIFY": "gdpr:rectifyData",
+    "RESTRICT": "gdpr:restrictProcessing",
+    "LIFT_RESTRICTION": "gdpr:liftRestriction",
+    "REMOVE_REQUEST": "gdpr:removeData",
+    "SEARCH_LOCATION": "gdpr:searchDataLocation"
+}
