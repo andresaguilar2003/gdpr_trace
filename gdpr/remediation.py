@@ -93,6 +93,30 @@ def _fix_access_after_erasure(trace):
         elif erased and e.get("gdpr:access"):
             e["gdpr:access"] = False
 
+def _fix_missing_consent(trace):
+    if any(e["concept:name"] == GDPR_EVENTS["CONSENT"] for e in trace):
+        return
+
+    first_event = trace[0]
+    consent = deepcopy(first_event)
+    consent["concept:name"] = GDPR_EVENTS["CONSENT"]
+    consent["time:timestamp"] -= timedelta(seconds=1)
+    trace.insert(0, consent)
+
+
+def _fix_missing_breach_notification(trace):
+    _fix_breach_notification(trace)
+
+
+def _fix_late_right_response(trace):
+    requests = [e for e in trace if e["concept:name"] == GDPR_EVENTS["REQUEST_INFO"]]
+    responses = [e for e in trace if e["concept:name"] == GDPR_EVENTS["PROVIDE_INFO"]]
+
+    for r in requests:
+        for resp in responses:
+            if resp["time:timestamp"] > r["time:timestamp"] + timedelta(days=30):
+                resp["time:timestamp"] = r["time:timestamp"] + timedelta(days=1)
+
 
 
 def apply_recommendations(trace, recommendations):
@@ -131,6 +155,16 @@ def apply_recommendations(trace, recommendations):
 
         elif v == "access_after_erasure":
             _fix_access_after_erasure(corrected_trace)
+
+        elif v == "missing_consent":
+            _fix_missing_consent(corrected_trace)
+
+        elif v == "missing_breach_notification":
+            _fix_missing_breach_notification(corrected_trace)
+
+        elif v == "late_right_response":
+            _fix_late_right_response(corrected_trace)
+
 
 
     corrected_trace.attributes["gdpr:remediated"] = True
