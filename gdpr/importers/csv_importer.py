@@ -1,5 +1,6 @@
 import pandas as pd
-from pm4py.objects.conversion.log import converter as log_converter
+from datetime import datetime
+from pm4py.objects.log.obj import EventLog, Trace, Event
 from gdpr.importers.base import BaseImporter
 
 class CSVImporter(BaseImporter):
@@ -7,14 +8,23 @@ class CSVImporter(BaseImporter):
     def load(self, path):
         df = pd.read_csv(path)
 
-        # EXPECTATIVAS MÍNIMAS:
-        # case_id, activity, timestamp
+        log = EventLog()
 
-        df = df.rename(columns={
-            "case_id": "case:concept:name",
-            "activity": "concept:name",
-            "timestamp": "time:timestamp"
-        })
+        for case_id, group in df.groupby("case_id"):
+            trace = Trace()
+            trace.attributes["concept:name"] = str(case_id)
 
-        event_log = log_converter.apply(df)
-        return event_log
+            for _, row in group.iterrows():
+                event = Event()
+                event["concept:name"] = row["activity"]
+                event["time:timestamp"] = datetime.fromisoformat(row["timestamp"])
+
+                # Campo GDPR opcional
+                if "gdpr_access" in row:
+                    event["gdpr:access"] = bool(row["gdpr_access"])
+
+                trace.append(event)
+
+            log.append(trace)
+
+        return log

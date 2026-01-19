@@ -5,6 +5,6 @@ class BaseImporter(ABC):
     @abstractmethod
     def load(self, path):
         """
-        Devuelve un pm4py EventLog
+        Carga un archivo y devuelve un pm4py EventLog
         """
         pass

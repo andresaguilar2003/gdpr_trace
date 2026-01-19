@@ -25,7 +25,7 @@ from gdpr.remediation import apply_recommendations
 
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/output"
-log_filename = "BPIC15_1.xes"
+log_filename = "BPI Challenge 2017.xes.gz"
 
 log_path = os.path.join(INPUT_DIR, log_filename)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
