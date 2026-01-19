@@ -35,7 +35,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # CARGA DEL LOG
 # ============================================================
 
-log = xes_importer.apply(log_path)
+from gdpr.importers import load_event_log
+
+log = load_event_log(log_path)
 
 print(f"Número de trazas: {len(log)}")
 print(f"Número de eventos de la primera traza: {len(log[0])}")
