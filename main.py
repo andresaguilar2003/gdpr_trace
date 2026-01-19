@@ -25,7 +25,7 @@ from gdpr.remediation import apply_recommendations
 
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/output"
-log_filename = "Sepsis Cases - Event Log.xes.gz"
+log_filename = "BPIC15_1.xes"
 
 log_path = os.path.join(INPUT_DIR, log_filename)
 os.makedirs(OUTPUT_DIR, exist_ok=True)

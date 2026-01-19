@@ -104,6 +104,49 @@ RECOMMENDATION_CATALOG = {
             "ningún tratamiento previo de los mismos."
         ),
         "legal_reference": "Art. 5 GDPR"
+    },
+        "implicit_consent": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Obtener consentimiento explícito",
+        "recommendation": (
+            "El consentimiento debe ser otorgado mediante una acción afirmativa clara "
+            "y no puede inferirse del silencio o de acciones implícitas."
+        ),
+        "legal_reference": "Art. 4(11) y Art. 7 GDPR"
+    },
+
+    "purpose_violation": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Respetar la limitación de la finalidad",
+        "recommendation": (
+            "Los datos personales solo deben tratarse para los fines específicos, "
+            "explícitos y legítimos para los que fueron recogidos."
+        ),
+        "legal_reference": "Art. 5(1)(b) GDPR"
+    },
+
+    "data_minimization_violation": {
+        "severity": "medium",
+        "risk_level": "procedural",
+        "title": "Aplicar el principio de minimización de datos",
+        "recommendation": (
+            "El tratamiento debe limitarse a los datos adecuados, pertinentes "
+            "y necesarios para la finalidad declarada."
+        ),
+        "legal_reference": "Art. 5(1)(c) GDPR"
+    },
+
+    "access_after_erasure": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Evitar accesos tras el borrado de datos",
+        "recommendation": (
+            "Una vez ejercido el derecho de supresión, no debe realizarse "
+            "ningún acceso posterior a los datos personales."
+        ),
+        "legal_reference": "Art. 17 GDPR"
     }
 
 }

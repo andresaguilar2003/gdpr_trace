@@ -67,6 +67,32 @@ def _fix_rights_response(trace):
             new_resp["time:timestamp"] = r["time:timestamp"] + timedelta(days=1)
             trace.append(new_resp)
 
+def _fix_implicit_consent(trace):
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["CONSENT"]:
+            e["gdpr:explicit"] = True
+
+def _fix_purpose_violation(trace):
+    for e in trace:
+        if e.get("gdpr:access"):
+            e["gdpr:purpose"] = trace.attributes.get(
+                "gdpr:default_purpose", "service_provision"
+            )
+            
+def _fix_data_minimization(trace):
+    for e in trace:
+        if e.get("gdpr:access"):
+            e["gdpr:data_scope"] = "minimal"
+
+def _fix_access_after_erasure(trace):
+    erased = False
+
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["ERASE"]:
+            erased = True
+        elif erased and e.get("gdpr:access"):
+            e["gdpr:access"] = False
+
 
 
 def apply_recommendations(trace, recommendations):
@@ -93,6 +119,19 @@ def apply_recommendations(trace, recommendations):
 
         elif v == "missing_right_response":
             _fix_rights_response(corrected_trace)
+        
+        elif v == "implicit_consent":
+            _fix_implicit_consent(corrected_trace)
+
+        elif v == "purpose_violation":
+            _fix_purpose_violation(corrected_trace)
+
+        elif v == "data_minimization_violation":
+            _fix_data_minimization(corrected_trace)
+
+        elif v == "access_after_erasure":
+            _fix_access_after_erasure(corrected_trace)
+
 
     corrected_trace.attributes["gdpr:remediated"] = True
     return corrected_trace

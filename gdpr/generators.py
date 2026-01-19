@@ -1,6 +1,6 @@
 # gdpr/generators.py
 import copy
-from random import choice
+from random import choice, sample
 from gdpr.vocabulary import GDPR_EVENTS
 from gdpr.utils import sort_trace_by_time, get_first_event_timestamp
 from datetime import timedelta
@@ -550,36 +550,78 @@ def insert_data_subject_rights(trace):
     trace.insert(insert_pos + 1, provide_event)
 
 
-def generate_non_compliant_trace(trace):
+def generate_non_compliant_trace(trace, max_violations=3):
     """
     Genera una versión NO conforme con GDPR a partir de una traza compliant.
-    Se introduce UNA violación aleatoria.
+    Introduce múltiples violaciones aleatorias.
     """
     new_trace = copy.deepcopy(trace)
-    violations = [
+
+    possible_violations = [
         "consent_after_access",
         "missing_consent",
         "late_breach_notification",
-        "missing_right_response"
+        "missing_breach_notification",
+        "missing_right_response",
+        "late_right_response",
+        "access_after_withdrawal",
+        "access_during_restriction",
+        "erase_without_processing",
+        "implicit_consent",
+        "purpose_violation",
+        "data_minimization_violation",
+        "access_after_erasure"
     ]
 
-    violation = choice(violations)
-    new_trace.attributes["gdpr:violation_type"] = violation
+    n = randint(1, max_violations)
+    selected = sample(possible_violations, n)
 
-    if violation == "consent_after_access":
-        _violate_consent_order(new_trace)
+    new_trace.attributes["gdpr:violation_types"] = selected
 
-    elif violation == "missing_consent":
-        _remove_event(new_trace, GDPR_EVENTS["CONSENT"])
+    for violation in selected:
+        if violation == "consent_after_access":
+            _violate_consent_order(new_trace)
 
-    elif violation == "missing_right_response":
-        _remove_event(new_trace, GDPR_EVENTS["PROVIDE_INFO"])
+        elif violation == "missing_consent":
+            _remove_event(new_trace, GDPR_EVENTS["CONSENT"])
 
-    elif violation == "late_breach_notification":
-        _delay_breach_notification(new_trace)
+        elif violation == "missing_right_response":
+            _remove_event(new_trace, GDPR_EVENTS["PROVIDE_INFO"])
+
+        elif violation == "late_right_response":
+            _delay_right_response(new_trace)
+
+        elif violation == "late_breach_notification":
+            _delay_breach_notification(new_trace)
+
+        elif violation == "missing_breach_notification":
+            _remove_event(new_trace, GDPR_EVENTS["NOTIFY_BREACH"])
+
+        elif violation == "access_after_withdrawal":
+            _insert_access_after_withdrawal(new_trace)
+
+        elif violation == "access_during_restriction":
+            _insert_access_during_restriction(new_trace)
+
+        elif violation == "erase_without_processing":
+            _insert_erase_without_processing(new_trace)
+
+        elif violation == "implicit_consent":
+            _make_consent_implicit(new_trace)
+
+        elif violation == "purpose_violation":
+            _violate_purpose(new_trace)
+
+        elif violation == "data_minimization_violation":
+            _excessive_data_access(new_trace)
+
+        elif violation == "access_after_erasure":
+            _insert_access_after_erasure(new_trace)
+
 
     sort_trace_by_time(new_trace)
     new_trace.attributes["gdpr:compliance"] = "non_compliant"
+
     return new_trace
 
 def _remove_event(trace, event_name):
@@ -624,3 +666,90 @@ def _delay_breach_notification(trace):
 
     if detect and notify:
         notify["time:timestamp"] = detect["time:timestamp"] + timedelta(hours=100)
+
+def _insert_access_after_withdrawal(trace):
+    withdraw = next(
+        (e for e in trace if e["concept:name"] == GDPR_EVENTS["WITHDRAW"]),
+        None
+    )
+
+    if withdraw:
+        access = copy.deepcopy(withdraw)
+        access["concept:name"] = "DATA_ACCESS"
+        access["gdpr:access"] = True
+        access["time:timestamp"] += timedelta(minutes=10)
+        trace._list.append(access)
+
+
+def _insert_access_during_restriction(trace):
+    restrict = next(
+        (e for e in trace if e["concept:name"] == GDPR_EVENTS["RESTRICT"]),
+        None
+    )
+
+    if restrict:
+        access = copy.deepcopy(restrict)
+        access["concept:name"] = "DATA_ACCESS"
+        access["gdpr:access"] = True
+        access["time:timestamp"] += timedelta(minutes=5)
+        trace._list.append(access)
+
+def _insert_erase_without_processing(trace):
+    erase = next(
+        (e for e in trace if e["concept:name"] == GDPR_EVENTS["ERASE"]),
+        None
+    )
+
+    if not erase:
+        erase_event = copy.deepcopy(trace[0])
+        erase_event["concept:name"] = GDPR_EVENTS["ERASE"]
+        erase_event["time:timestamp"] += timedelta(minutes=1)
+        trace._list.append(erase_event)
+
+def _delay_right_response(trace):
+    request = None
+    response = None
+
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["REQUEST_INFO"]:
+            request = e
+        elif e["concept:name"] == GDPR_EVENTS["PROVIDE_INFO"]:
+            response = e
+
+    if request and response:
+        response["time:timestamp"] = request["time:timestamp"] + timedelta(days=45)
+
+
+def _make_consent_implicit(trace):
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["CONSENT"]:
+            e["gdpr:explicit"] = False
+            return
+
+
+def _violate_purpose(trace):
+    for e in trace:
+        if e.get("gdpr:access"):
+            e["gdpr:purpose"] = "unauthorized_purpose"
+            return
+
+
+def _excessive_data_access(trace):
+    for e in trace:
+        if e.get("gdpr:access"):
+            e["gdpr:data_scope"] = "excessive"
+            return
+
+
+def _insert_access_after_erasure(trace):
+    erase = next(
+        (e for e in trace if e["concept:name"] == GDPR_EVENTS["ERASE"]),
+        None
+    )
+
+    if erase:
+        access = copy.deepcopy(erase)
+        access["concept:name"] = "DATA_ACCESS"
+        access["gdpr:access"] = True
+        access["time:timestamp"] += timedelta(minutes=5)
+        trace._list.append(access)

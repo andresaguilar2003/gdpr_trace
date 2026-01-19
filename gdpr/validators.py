@@ -44,6 +44,10 @@ def validate_consent_before_access(trace):
         })
         return violations
 
+    # ✅ Si no hay accesos, no hay violación
+    if not access_events:
+        return violations
+    
     # ❌ Accesos antes del consentimiento
     consent_ts = consent_events[0]["time:timestamp"]
 
@@ -196,6 +200,70 @@ def validate_erase_without_processing(trace):
 
     return []
 
+def validate_implicit_consent(trace):
+    violations = []
+
+    for e in get_events(trace, GDPR_EVENTS["CONSENT"]):
+        if not e.get("gdpr:explicit", False):
+            violations.append({
+                "type": "implicit_consent",
+                "severity": "medium",
+                "message": "El consentimiento no fue explícito",
+                "events": [e]
+            })
+
+    return violations
+
+def validate_purpose_limitation(trace):
+    violations = []
+
+    allowed_purpose = trace.attributes.get("gdpr:default_purpose")
+
+    for e in trace:
+        if e.get("gdpr:access") and e.get("gdpr:purpose") != allowed_purpose:
+            violations.append({
+                "type": "purpose_violation",
+                "severity": "high",
+                "message": "Uso de datos para un propósito no autorizado",
+                "events": [e]
+            })
+
+    return violations
+
+
+def validate_data_minimization(trace):
+    violations = []
+
+    for e in trace:
+        if e.get("gdpr:access") and e.get("gdpr:data_scope") == "excessive":
+            violations.append({
+                "type": "data_minimization_violation",
+                "severity": "medium",
+                "message": "Acceso a más datos de los necesarios",
+                "events": [e]
+            })
+
+    return violations
+
+
+def validate_access_after_erasure(trace):
+    erase_ts = None
+    violations = []
+
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["ERASE"]:
+            erase_ts = e["time:timestamp"]
+
+        elif erase_ts and e.get("gdpr:access"):
+            violations.append({
+                "type": "access_after_erasure",
+                "severity": "critical",
+                "message": "Acceso a datos tras solicitud de borrado",
+                "events": [e]
+            })
+
+    return violations
+
 
 # ============================================================
 # MAIN VALIDATION ENTRY POINT
@@ -210,5 +278,10 @@ def validate_trace(trace):
     violations.extend(validate_breach_notification_time(trace))
     violations.extend(validate_data_subject_rights(trace))
     violations.extend(validate_erase_without_processing(trace))
+    violations.extend(validate_implicit_consent(trace))
+    violations.extend(validate_purpose_limitation(trace))
+    violations.extend(validate_data_minimization(trace))
+    violations.extend(validate_access_after_erasure(trace))
+
 
     return violations
