@@ -13,30 +13,40 @@ def print_trace(trace, title):
             f"| access={e.get('gdpr:access')} | violation={e.get('gdpr:violation')}"
         )
 
-def test_late_breach_notification():
+def test_access_during_restriction():
     log = load_event_log("data/input/log_original.xes")
     trace = build_compliant_trace(log[0])
 
-    breach_time = trace[-1]["time:timestamp"] + timedelta(minutes=1)
+    restriction_start = trace[-1]["time:timestamp"] + timedelta(seconds=1)
 
-    breach_event = {
-        "concept:name": "gdpr:dataBreach",
-        "time:timestamp": breach_time,
+    restrict_event = {
+        "concept:name": "gdpr:restrictProcessing",
+        "time:timestamp": restriction_start,
         "gdpr:event": True,
         "gdpr:actor": "Controller"
     }
 
-    late_notification = {
-        "concept:name": "gdpr:notifyBreach",
-        "time:timestamp": breach_time + timedelta(hours=100),  # >72h
+    illegal_access = {
+        "concept:name": "access_medical_record",
+        "time:timestamp": restriction_start + timedelta(minutes=5),
+        "gdpr:access": "gdpr:readData",
+        "gdpr:actor": "Controller",
+        "gdpr:purpose": "medical_treatment"
+    }
+
+    lift_event = {
+        "concept:name": "gdpr:liftRestriction",
+        "time:timestamp": restriction_start + timedelta(minutes=10),
         "gdpr:event": True,
         "gdpr:actor": "Controller"
     }
 
-    trace.append(breach_event)
-    trace.append(late_notification)
+    trace.append(restrict_event)
+    trace.append(illegal_access)
+    trace.append(lift_event)
 
-    print_trace(trace, "TRACE WITH LATE BREACH NOTIFICATION")
+
+    print_trace(trace, "TRACE WITH ACCESS DURING RESTRICTION")
 
     violations = validate_trace(trace)
 
@@ -44,4 +54,4 @@ def test_late_breach_notification():
     for v in violations:
         print(f"- {v['type']} | severity={v['severity']} | {v['message']}")
 
-    assert any(v["type"] == "late_breach_notification" for v in violations)
+    assert any(v["type"] == "access_during_restriction" for v in violations)

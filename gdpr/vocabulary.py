@@ -18,5 +18,7 @@ GDPR_EVENTS = {
     "RESTRICT": "gdpr:restrictProcessing",
     "LIFT_RESTRICTION": "gdpr:liftRestriction",
     "REMOVE_REQUEST": "gdpr:removeData",
-    "SEARCH_LOCATION": "gdpr:searchDataLocation"
+    "SEARCH_LOCATION": "gdpr:searchDataLocation",
+    "DEFAULT_GDPR_PURPOSE": "gdpr:service_provision"
+
 }

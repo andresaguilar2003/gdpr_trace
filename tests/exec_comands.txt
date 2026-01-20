@@ -1,0 +1,8 @@
+**TEST_TRACES**
+python -m pytest tests/test_traces/test_compliant_trace.py
+python -m pytest tests/test_traces/test_non_compliant_trace.py
+
+****
+python -m pytest tests/validators/test_late_breach_notification.py -s
+python -m pytest tests/validators/test_access_during_restriction.py -s
+python -m pytest tests/validators/test_access_after_erasure.py -s

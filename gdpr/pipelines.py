@@ -19,11 +19,24 @@ def build_compliant_trace(trace):
     Construye una traza GDPR-compliant a partir de una traza real.
     Implementa las Figuras 3–6 del modelo GDPR.
     """
+
+    # =====================================================
+    # 1) CONTEXTO GDPR A NIVEL DE TRAZA (CLAVE)
+    # =====================================================
+    trace.attributes.setdefault("gdpr:personal_data", True)
+    trace.attributes.setdefault("gdpr:data_subject", "data_subject")
+    trace.attributes.setdefault("gdpr:data_controller", "Controller")
+    trace.attributes.setdefault("gdpr:legal_basis", "consent")
+    trace.attributes.setdefault("gdpr:default_purpose", "service_provision")
+    trace.attributes.setdefault("gdpr:processing_scope", "full")
+
+
+    # =====================================================
+    # 2) FLUJOS GDPR (eventos)
+    # =====================================================
     insert_initial_consent_flow(
         trace,
-        default_purpose=trace.attributes.get(
-            "gdpr:default_purpose", "service_provision"
-        )
+        default_purpose=trace.attributes["gdpr:default_purpose"]
     )
 
     insert_consent_expiration(trace)
@@ -39,8 +52,13 @@ def build_compliant_trace(trace):
 
     sort_trace_by_time(trace)
 
+    # =====================================================
+    # 3) MARCADO FINAL
+    # =====================================================
     trace.attributes["gdpr:compliance"] = "compliant"
+
     return trace
+
 
 
 
