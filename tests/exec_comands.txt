@@ -1,8 +1,71 @@
-**TEST_TRACES**
-python -m pytest tests/test_traces/test_compliant_trace.py
-python -m pytest tests/test_traces/test_non_compliant_trace.py
+# =========================
+# TEST_TRACES
+# =========================
 
-****
+python -m pytest tests/test_traces/test_compliant_trace.py
+# Comprueba que una traza GDPR-compliant se genera correctamente a partir de un log real
+
+python -m pytest tests/test_traces/test_non_compliant_trace.py
+# Comprueba que se genera una traza no conforme introduciendo violaciones controladas
+
+
+# =========================
+# IMPORT
+# =========================
+
+python -m pytest tests/import/test_log_is_loaded.py -s
+# Verifica que el event log original (.xes) se carga correctamente
+
+python -m pytest tests/import/test_log_has_no_gdpr_context_initially.py -s
+# Comprueba que el log original no contiene contexto GDPR antes del pipeline
+
+python -m pytest tests/import/test_events_have_no_access_flag_initially.py -s
+# Verifica que los eventos originales no tienen marcado acceso a datos personales
+
+
+# =========================
+# PIPELINE
+# =========================
+
+python -m pytest tests/pipelines/test_gdpr_context_is_added.py -s
+# Comprueba que el pipeline añade el contexto GDPR a nivel de traza
+
+python -m pytest tests/pipelines/test_access_events_are_inferred.py -s
+# Verifica que los eventos reales son enriquecidos como accesos GDPR cuando corresponde
+
+python -m pytest tests/pipelines/test_gdpr_events_are_inserted.py -s
+# Comprueba que se insertan eventos GDPR (consentimiento, logs, permisos, etc.)
+
+python -m pytest tests/pipelines/test_no_access_before_consent.py -s
+# Comprueba que ningún acceso a datos personales ocurre antes de que el consentimiento explícito haya sido otorgado
+
+python -m pytest tests/pipelines/test_consent_expiration_is_inserted.py -s
+# Verifica que el consentimiento expira automáticamente tras superar el maxTime, insertando un evento consentExpired
+
+python -m pytest tests/pipelines/test_remove_data_flow_is_well_formed.py -s
+# Comprueba que el flujo de borrado de datos (removeData → searchDataLocation → eraseData) se inserta correctamente
+
+python -m pytest tests/pipelines/test_rectification_event_is_inserted_correctly.py -s
+# Verifica que el evento de rectificación de datos se inserta correctamente tras el consentimiento
+
+python -m pytest tests/pipelines/test_processing_restriction_flow_is_well_formed.py -s
+# Verifica que el flujo de restricción del tratamiento se inserta correctamente tras el consentimiento y se levanta de forma coherente
+
+python -m pytest tests/pipelines/test_remove_data_flow_respects_temporal_constraints.py -s
+# Comprueba que el flujo de supresión de datos personales sigue el orden y las restricciones temporales
+
+python -m pytest tests/pipelines/test_consent_expiration_respects_max_time.py -s
+# Verifica que la expiración del consentimiento, si ocurre, respeta el límite temporal definido por gdpr:maxTime (72 horas)
+
+# =========================
+# VALIDATORS
+# =========================
+
 python -m pytest tests/validators/test_late_breach_notification.py -s
+# Detecta violaciones por notificación de brecha fuera del plazo legal (72h)
+
 python -m pytest tests/validators/test_access_during_restriction.py -s
+# Detecta accesos a datos durante una restricción de tratamiento activa
+
 python -m pytest tests/validators/test_access_after_erasure.py -s
+# Detecta accesos a datos personales después de una solicitud de borrado
