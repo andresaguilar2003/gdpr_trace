@@ -7,12 +7,12 @@ from gdpr.pipelines import (
     build_compliant_trace,
     build_non_compliant_trace
 )
-from gdpr.validators import validate_trace
+from gdpr.validators.validators import validate_trace
 from gdpr.recommendations import generate_recommendations
 from gdpr.summary import summarize_recommendations
 from gdpr.exporters import export_recommendations
 from gdpr.scoring import compute_gdpr_risk_score, classify_risk
-from gdpr.validators import validate_trace, annotate_violations_on_trace
+from gdpr.validators.validators import validate_trace, annotate_violations_on_trace
 from gdpr.ranking import build_trace_ranking
 from gdpr.audit import generate_audit_report
 from gdpr.remediation import apply_recommendations

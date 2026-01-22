@@ -82,7 +82,7 @@ def insert_initial_consent_flow(trace, default_purpose="service_provision"):
         GDPR_EVENTS["INFORM"],
         first_ts - timedelta(minutes=10),
         actor="Controller",
-        purpose="medical_treatment"
+        purpose="service_t"
     )
 
     consent_event = create_gdpr_event(
@@ -301,7 +301,7 @@ from datetime import timedelta
 # Clasificación del tipo de acceso
 # ------------------------------------------------------------
 def classify_data_access(event_name):
-    write_verbs = ["create", "update", "modify", "delete", "write", "set"]
+    write_verbs = ["create", "update", "modify", "delete", "write", "set", "register"]
     return GDPR_EVENTS["WRITE"] if any(v in event_name.lower() for v in write_verbs) else GDPR_EVENTS["READ"]
 
 
@@ -367,7 +367,7 @@ def enrich_real_events_with_gdpr(trace):
         permission_event = create_permission_event(
             timestamp=event["time:timestamp"] - timedelta(seconds=1),
             access_type=access_type,
-            purpose="medical_treatment",
+            purpose="service_provision",
             legal_basis="consent"
         )
 
@@ -377,7 +377,7 @@ def enrich_real_events_with_gdpr(trace):
         event["gdpr:access"] = access_type
         event["gdpr:access_mode"] = "single"  # preparado para combine
         event["gdpr:actor"] = "Controller"
-        event["gdpr:purpose"] = "medical_treatment"
+        event["gdpr:purpose"] = "service_provision"
 
         i += 1
 
@@ -548,6 +548,62 @@ def insert_data_subject_rights(trace):
     provide_event = create_provide_info_event(provide_ts)
     
     trace.insert(insert_pos + 1, provide_event)
+
+
+
+
+# ============================================================
+# EXTENSIÓN FIGURA 3 – BORRADO FINAL FUERA DEL LOOP
+# (removing SP in log / removing Data & Copies)
+# ============================================================
+
+def create_remove_sp_log_event(timestamp):
+    return create_gdpr_event(
+        name=GDPR_EVENTS["REMOVE_SP_LOG"],
+        timestamp=timestamp,
+        actor="Controller",
+        purpose="cleanup_processing_state"
+    )
+
+def create_erase_all_copies_event(timestamp):
+    return create_gdpr_event(
+        name=GDPR_EVENTS["ERASE_ALL_COPIES"],
+        timestamp=timestamp,
+        actor="Controller",
+        purpose="final_data_erasure"
+    )
+
+def finalize_erasure_after_loop(trace):
+    """
+    Implementa la parte final de la Figura 3:
+    - removing SP in log
+    - removing Data & Copies
+    """
+
+    last_erase_index = None
+    for i, event in enumerate(trace):
+        if event["concept:name"] == GDPR_EVENTS["ERASE"]:
+            last_erase_index = i
+
+    if last_erase_index is None:
+        return  # No hubo derecho de supresión
+
+    base_ts = trace[last_erase_index]["time:timestamp"]
+
+    trace.insert(
+        last_erase_index + 1,
+        create_remove_sp_log_event(base_ts + timedelta(minutes=5))
+    )
+
+    trace.insert(
+        last_erase_index + 2,
+        create_erase_all_copies_event(base_ts + timedelta(minutes=10))
+    )
+
+
+###################################################
+#######    NON_COMPLIANT   ##########
+###################################################
 
 
 def generate_non_compliant_trace(trace, max_violations=3):

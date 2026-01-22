@@ -1,6 +1,6 @@
 from gdpr.importers import load_event_log
 from gdpr.pipelines import build_compliant_trace, build_non_compliant_trace
-from gdpr.validators import validate_trace
+from gdpr.validators.validators import validate_trace
 
 def print_trace(trace, title):
     print("\n" + "=" * 60)

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from gdpr.importers import load_event_log
 from gdpr.pipelines import build_compliant_trace
-from gdpr.validators import validate_trace
+from gdpr.validators.validators import validate_trace
 from gdpr.vocabulary import GDPR_EVENTS
 
 

@@ -2,10 +2,10 @@
 # TEST_TRACES
 # =========================
 
-python -m pytest tests/test_traces/test_compliant_trace.py
+python -m pytest tests/test_traces/test_compliant_trace.py -s
 # Comprueba que una traza GDPR-compliant se genera correctamente a partir de un log real
 
-python -m pytest tests/test_traces/test_non_compliant_trace.py
+python -m pytest tests/test_traces/test_non_compliant_trace.py -s
 # Comprueba que se genera una traza no conforme introduciendo violaciones controladas
 
 
@@ -42,6 +42,9 @@ python -m pytest tests/pipelines/test_no_access_before_consent.py -s
 python -m pytest tests/pipelines/test_consent_expiration_is_inserted.py -s
 # Verifica que el consentimiento expira automáticamente tras superar el maxTime, insertando un evento consentExpired
 
+python -m pytest tests/pipelines/test_consent_expiration_respects_max_time.py -s
+# Verifica que la expiración del consentimiento, si ocurre, respeta el límite temporal definido por gdpr:maxTime (365 dias)
+
 python -m pytest tests/pipelines/test_remove_data_flow_is_well_formed.py -s
 # Comprueba que el flujo de borrado de datos (removeData → searchDataLocation → eraseData) se inserta correctamente
 
@@ -54,8 +57,7 @@ python -m pytest tests/pipelines/test_processing_restriction_flow_is_well_formed
 python -m pytest tests/pipelines/test_remove_data_flow_respects_temporal_constraints.py -s
 # Comprueba que el flujo de supresión de datos personales sigue el orden y las restricciones temporales
 
-python -m pytest tests/pipelines/test_consent_expiration_respects_max_time.py -s
-# Verifica que la expiración del consentimiento, si ocurre, respeta el límite temporal definido por gdpr:maxTime (72 horas)
+
 
 # =========================
 # VALIDATORS
@@ -69,3 +71,11 @@ python -m pytest tests/validators/test_access_during_restriction.py -s
 
 python -m pytest tests/validators/test_access_after_erasure.py -s
 # Detecta accesos a datos personales después de una solicitud de borrado
+
+
+
+# =========================
+# STICKY POLICIES
+# =========================
+python -m pytest tests/sticky_policies/test_sp_no_access_after_erasure.py -s
+# Verifica que, según la Sticky Policy reconstruida, no existen accesos a datos personales tras un evento de borrado (eraseData)

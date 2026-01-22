@@ -1,6 +1,6 @@
 from gdpr.importers import load_event_log
 from gdpr.pipelines import build_compliant_trace
-from gdpr.validators import validate_trace
+from gdpr.validators.validators import validate_trace
 from datetime import timedelta
 
 def print_trace(trace, title):
@@ -36,7 +36,7 @@ def test_access_after_erasure():
         "time:timestamp": erase_event["time:timestamp"] + timedelta(seconds=5),
         "gdpr:access": "gdpr:readData",
         "gdpr:actor": "Controller",
-        "gdpr:purpose": "medical_treatment"
+        "gdpr:purpose": "service_provision"
     }
 
     compliant.append(illegal_access)

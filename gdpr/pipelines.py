@@ -4,6 +4,7 @@ from gdpr.generators import (
     insert_initial_consent_flow,
     insert_consent_expiration,
     insert_remove_data_flow,
+    finalize_erasure_after_loop,
     insert_rectification,
     insert_processing_restriction,
     enrich_real_events_with_gdpr,
@@ -11,6 +12,8 @@ from gdpr.generators import (
     insert_breach_events,
     insert_data_subject_rights
 )
+
+from gdpr.sticky_policies import build_sticky_policy_from_trace
 from gdpr.utils import sort_trace_by_time
 
 
@@ -41,6 +44,7 @@ def build_compliant_trace(trace):
 
     insert_consent_expiration(trace)
     insert_remove_data_flow(trace)
+    finalize_erasure_after_loop(trace)
     insert_rectification(trace)
     insert_processing_restriction(trace)
 
@@ -56,6 +60,7 @@ def build_compliant_trace(trace):
     # 3) MARCADO FINAL
     # =====================================================
     trace.attributes["gdpr:compliance"] = "compliant"
+    trace.attributes["gdpr:sticky_policy"] = build_sticky_policy_from_trace(trace)
 
     return trace
 

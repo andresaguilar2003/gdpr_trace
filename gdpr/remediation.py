@@ -117,6 +117,35 @@ def _fix_late_right_response(trace):
             if resp["time:timestamp"] > r["time:timestamp"] + timedelta(days=30):
                 resp["time:timestamp"] = r["time:timestamp"] + timedelta(days=1)
 
+def _fix_access_after_consent_expiration(trace):
+    expired = False
+
+    for e in trace:
+        if e["concept:name"] == GDPR_EVENTS["CONSENT_EXPIRED"]:
+            expired = True
+        elif expired and e.get("gdpr:access"):
+            e["gdpr:access"] = False
+
+def _fix_missing_permission(trace):
+    from copy import deepcopy
+    from datetime import timedelta
+
+    i = 0
+    while i < len(trace):
+        e = trace[i]
+
+        if e.get("gdpr:access"):
+            prev = trace[i - 1] if i > 0 else None
+
+            if not prev or prev["concept:name"] != "gdpr:permissionGranted":
+                perm = deepcopy(e)
+                perm["concept:name"] = "gdpr:permissionGranted"
+                perm["time:timestamp"] = e["time:timestamp"] - timedelta(seconds=1)
+                perm["gdpr:event"] = True
+                trace.insert(i, perm)
+                i += 1
+
+        i += 1
 
 
 def apply_recommendations(trace, recommendations):
@@ -164,6 +193,12 @@ def apply_recommendations(trace, recommendations):
 
         elif v == "late_right_response":
             _fix_late_right_response(corrected_trace)
+
+        elif v == "access_after_consent_expiration":
+            _fix_access_after_consent_expiration(corrected_trace)
+
+        elif v == "access_without_permission":
+            _fix_missing_permission(corrected_trace)
 
 
 

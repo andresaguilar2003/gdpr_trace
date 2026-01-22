@@ -1,0 +1,72 @@
+# gdpr/sticky_policies.py
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List, Set, Optional
+
+
+@dataclass
+class StickyPolicy:
+    """
+    Sticky Policy (SP) asociada a un dato personal.
+    Se reconstruye a partir de la traza.
+    """
+    data_id: str
+
+    owner: Optional[str] = None
+    controller: Optional[str] = None
+
+    purposes: Set[str] = field(default_factory=set)
+    permissions: Set[str] = field(default_factory=set)
+
+    consent_given: bool = False
+    consent_timestamp: Optional[datetime] = None
+    consent_expired: bool = False
+    max_retention_time: Optional[datetime] = None
+
+    processing_restricted: bool = False
+    erased: bool = False
+
+    access_history: List[dict] = field(default_factory=list)
+
+def build_sticky_policy_from_trace(trace) -> StickyPolicy:
+    """
+    Reconstruye la Sticky Policy a partir de una traza GDPR-enriquecida.
+    """
+    sp = StickyPolicy(data_id=trace.attributes.get("concept:name", "unknown"))
+
+    for event in trace:
+        name = event["concept:name"]
+
+        # Consentimiento
+        if name == "gdpr:giveConsent":
+            sp.consent_given = True
+            sp.consent_timestamp = event["time:timestamp"]
+            sp.purposes.add(event.get("gdpr:purpose", "unspecified"))
+
+        if name == "gdpr:consentExpired":
+            sp.consent_expired = True
+
+        # Restricción de tratamiento
+        if name == "gdpr:restrictProcessing":
+            sp.processing_restricted = True
+
+        if name == "gdpr:liftRestriction":
+            sp.processing_restricted = False
+
+        # Borrado de datos
+        if name == "gdpr:eraseData":
+            sp.erased = True
+
+        # Accesos a datos
+        if event.get("gdpr:access"):
+            sp.permissions.add(event["gdpr:access"])
+            sp.access_history.append({
+                "timestamp": event["time:timestamp"],
+                "access": event["gdpr:access"],
+                "purpose": event.get("gdpr:purpose"),
+                "actor": event.get("gdpr:actor"),
+                "activity": name
+            })
+
+    return sp

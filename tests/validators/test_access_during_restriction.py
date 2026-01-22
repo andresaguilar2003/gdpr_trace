@@ -1,7 +1,7 @@
 from datetime import timedelta
 from gdpr.importers import load_event_log
 from gdpr.pipelines import build_compliant_trace
-from gdpr.validators import validate_trace
+from gdpr.validators.validators import validate_trace
 
 def print_trace(trace, title):
     print("\n" + "=" * 60)
@@ -31,7 +31,7 @@ def test_access_during_restriction():
         "time:timestamp": restriction_start + timedelta(minutes=5),
         "gdpr:access": "gdpr:readData",
         "gdpr:actor": "Controller",
-        "gdpr:purpose": "medical_treatment"
+        "gdpr:purpose": "service_provision"
     }
 
     lift_event = {

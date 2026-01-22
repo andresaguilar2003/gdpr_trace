@@ -147,7 +147,59 @@ RECOMMENDATION_CATALOG = {
             "ningún acceso posterior a los datos personales."
         ),
         "legal_reference": "Art. 17 GDPR"
+    },
+    "access_after_consent_expiration": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Cesar el tratamiento tras la expiración del consentimiento",
+        "recommendation": (
+            "Una vez expirado el consentimiento del interesado, "
+            "debe cesar inmediatamente cualquier acceso o tratamiento "
+            "de los datos personales."
+        ),
+        "legal_reference": "Art. 6, Art. 7 y Art. 5(1)(a) GDPR",
+        "suggested_events_order": [
+            "gdpr:consent",
+            "gdpr:consentExpired",
+            "NO data access"
+        ],
+        "time_constraint": "immediate"
+    },
+    "access_without_permission": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Autorizar explícitamente el acceso a datos",
+        "recommendation": (
+            "Todo acceso a datos personales debe estar precedido por una "
+            "autorización explícita que registre la base legal y el propósito."
+        ),
+        "legal_reference": "Art. 5(2), Art. 30 GDPR",
+        "suggested_events_order": [
+            "gdpr:permissionGranted",
+            "data_access"
+        ]
+    },
+    "missing_access_log": {
+        "severity": "medium",
+        "risk_level": "high",
+        "title": "Registrar todos los accesos a datos personales",
+        "recommendation": (
+            "Cada acceso a datos personales debe quedar registrado en un "
+            "accessLog para garantizar trazabilidad y auditoría."
+        ),
+        "legal_reference": "Art. 5(2), Art. 30 GDPR"
+    },
+    "sp_access_after_consent_expiration": {
+        "severity": "high",
+        "risk_level": "critical",
+        "title": "Acceso tras expiración del consentimiento",
+        "recommendation": (
+            "El tratamiento de datos personales debe cesar inmediatamente "
+            "tras la expiración del consentimiento, según la Sticky Policy asociada."
+        ),
+        "legal_reference": "Art. 6, Art. 7, Art. 5(1)(a) GDPR"
     }
+
 
 }
 
