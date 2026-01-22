@@ -33,4 +33,5 @@ def validate_trace(trace):
     violations.extend(validate_breach_notification_time(trace))
     violations.extend(validate_data_subject_rights(trace))
     violations.extend(validate_sticky_policy(trace))
+
     return violations

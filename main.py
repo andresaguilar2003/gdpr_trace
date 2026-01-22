@@ -8,7 +8,7 @@ from gdpr.pipelines import (
     build_non_compliant_trace
 )
 from gdpr.validators.validators import validate_trace
-from gdpr.recommendations import generate_recommendations
+from gdpr.recommendations import generate_recommendations, generate_sp_recommendations
 from gdpr.summary import summarize_recommendations
 from gdpr.exporters import export_recommendations
 from gdpr.scoring import compute_gdpr_risk_score, classify_risk
@@ -16,7 +16,7 @@ from gdpr.validators.validators import validate_trace, annotate_violations_on_tr
 from gdpr.ranking import build_trace_ranking
 from gdpr.audit import generate_audit_report
 from gdpr.remediation import apply_recommendations
-
+from gdpr.sticky_policies import build_sticky_policy_from_trace
 
 
 # ============================================================
@@ -67,10 +67,20 @@ all_recommendations = []
 for trace in log:
     # 1️⃣ Traza compliant
     compliant = build_compliant_trace(trace)
+
+    # 🟢 SP (después de construir la compliant)
+    compliant_sp = build_sticky_policy_from_trace(compliant)
+    compliant.attributes["gdpr:sticky_policy"] = compliant_sp
+
     compliant_log.append(compliant)
 
     # 2️⃣ Traza non-compliant
     non_compliant = build_non_compliant_trace(compliant)
+
+    # 🟢 SP (después de generar violaciones)
+    non_compliant_sp = build_sticky_policy_from_trace(non_compliant)
+    non_compliant.attributes["gdpr:sticky_policy"] = non_compliant_sp
+
     non_compliant_log.append(non_compliant)
 
     # 3️⃣ Validación
@@ -80,22 +90,30 @@ for trace in log:
     # 4️⃣ Recomendaciones
     recommendations = generate_recommendations(violations)
 
+    sp_recommendations = generate_sp_recommendations(non_compliant)
+    recommendations.extend(sp_recommendations)
+
+
     # 5️⃣ GDPR RISK SCORING
     risk_score = compute_gdpr_risk_score(recommendations)
     risk_level = classify_risk(risk_score)
 
-    # Guardar score en la traza (MUY IMPORTANTE)
     non_compliant.attributes["gdpr:risk_score"] = risk_score
     non_compliant.attributes["gdpr:risk_level"] = risk_level
-    
-    # 6️⃣ SIMULACIÓN CORRECTIVA (OPCIÓN C)
 
+    # 6️⃣ SIMULACIÓN CORRECTIVA
     remediated = apply_recommendations(non_compliant, recommendations)
+
+    # 🟢 SP (después de remediation)
+    remediated_sp = build_sticky_policy_from_trace(remediated)
+    remediated.attributes["gdpr:sticky_policy"] = remediated_sp
+
     remediated_log.append(remediated)
 
     # 7️⃣ Re-validación
     remediated_violations = validate_trace(remediated)
     remediated_recommendations = generate_recommendations(remediated_violations)
+
 
     # 8️⃣ GDPR RISK SCORING (DESPUÉS)
     remediated_score = compute_gdpr_risk_score(remediated_recommendations)

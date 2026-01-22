@@ -6,14 +6,25 @@ def generate_audit_report(trace_record):
     findings = []
 
     for rec in trace_record.get("recommendations", []):
-        findings.append({
-            "violation": rec.get("violation"),
-            "severity": rec.get("severity"),
-            "risk_level": rec.get("risk_level"),
-            "legal_reference": rec.get("legal_reference"),
-            "evidence": rec.get("recommendation"),
-            "recommended_action": rec.get("title")
-        })
+        if "violation" in rec:
+            findings.append({
+                "type": "technical_violation",
+                "violation": rec.get("violation"),
+                "severity": rec.get("severity"),
+                "risk_level": rec.get("risk_level"),
+                "legal_reference": rec.get("legal_reference"),
+                "evidence": rec.get("recommendation"),
+                "recommended_action": rec.get("title")
+            })
+        elif rec.get("type", "").startswith("sp_"):
+            findings.append({
+                "type": "sticky_policy_alert",
+                "policy_issue": rec.get("type"),
+                "severity": rec.get("severity"),
+                "evidence": rec.get("message"),
+                "recommended_action": "Organizational / governance action required"
+            })
+
 
     risk_level = trace_record.get("risk_level", "none")
 

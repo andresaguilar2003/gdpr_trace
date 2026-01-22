@@ -156,8 +156,11 @@ def apply_recommendations(trace, recommendations):
     corrected_trace = deepcopy(trace)
 
     for rec in recommendations:
-        v = rec["violation"]
+        if "violation" not in rec:
+            # Recomendación normativa (ej. Sticky Policy)
+            continue
 
+        v = rec["violation"]
         if v == "consent_after_access":
             _fix_consent_order(corrected_trace)
 
@@ -203,4 +206,8 @@ def apply_recommendations(trace, recommendations):
 
 
     corrected_trace.attributes["gdpr:remediated"] = True
+    corrected_trace.attributes["gdpr:sp_pending_actions"] = [
+        rec for rec in recommendations if "violation" not in rec
+    ]
+
     return corrected_trace

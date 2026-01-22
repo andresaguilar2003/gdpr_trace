@@ -246,3 +246,38 @@ def generate_recommendations(violations):
 
     return recommendations
 
+def generate_sp_recommendations(trace):
+    """
+    Genera recomendaciones basadas en el estado final de la Sticky Policy.
+    """
+    recs = []
+
+    sp = trace.attributes.get("gdpr:sticky_policy")
+    if not sp:
+        return recs
+
+    if sp.erased:
+        recs.append({
+            "type": "sp_enforce_erasure",
+            "priority": "critical",
+            "message": "La Sticky Policy indica que los datos deben estar borrados. "
+                       "Eliminar accesos y copias residuales."
+        })
+
+    if sp.processing_restricted:
+        recs.append({
+            "type": "sp_enforce_restriction",
+            "priority": "high",
+            "message": "La Sticky Policy impone una restricción de tratamiento. "
+                       "Bloquear accesos no esenciales."
+        })
+
+    if sp.consent_expired:
+        recs.append({
+            "type": "sp_renew_consent",
+            "priority": "high",
+            "message": "El consentimiento ha expirado según la Sticky Policy. "
+                       "Solicitar nuevo consentimiento."
+        })
+
+    return recs

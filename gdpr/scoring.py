@@ -19,13 +19,18 @@ def compute_gdpr_risk_score(recommendations):
     raw_score = 0
 
     for rec in recommendations:
-        severity = rec.get("severity", "low")
-        risk_level = rec.get("risk_level", "procedural")
+        if "violation" in rec:
+            severity = rec.get("severity", "low")
+            risk_level = rec.get("risk_level", "procedural")
+            raw_score += (
+                SEVERITY_WEIGHTS.get(severity, 1) *
+                RISK_LEVEL_MULTIPLIER.get(risk_level, 1)
+            )
 
-        severity_weight = SEVERITY_WEIGHTS.get(severity, 1)
-        risk_multiplier = RISK_LEVEL_MULTIPLIER.get(risk_level, 1)
+        elif rec.get("type", "").startswith("sp_"):
+            # Penalización estructural fija
+            raw_score += 10
 
-        raw_score += severity_weight * risk_multiplier
 
     # Normalización simple (ajustable)
     score = min(100, raw_score * 5)
