@@ -16,6 +16,22 @@ def annotate_violations_on_trace(trace, violations):
             event["gdpr:violation_severity"] = v.get("severity", "unknown")
             event["gdpr:violation_message"] = v.get("message")
 
+def deduplicate_sp_violations(violations):
+    sp_types = {
+        v["type"].replace("sp_", "")
+        for v in violations
+        if v["type"].startswith("sp_")
+    }
+
+    filtered = []
+    for v in violations:
+        if v["type"] in sp_types:
+            continue  # absorbida por SP
+        filtered.append(v)
+
+    return filtered
+
+
 def validate_trace(trace):
     violations = []
     violations.extend(validate_consent_before_access(trace))
@@ -33,5 +49,8 @@ def validate_trace(trace):
     violations.extend(validate_breach_notification_time(trace))
     violations.extend(validate_data_subject_rights(trace))
     violations.extend(validate_sticky_policy(trace))
+
+    violations = deduplicate_sp_violations(violations)
+
 
     return violations

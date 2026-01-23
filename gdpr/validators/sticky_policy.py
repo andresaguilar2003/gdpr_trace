@@ -139,7 +139,7 @@ def validate_sp_purpose_limitation(trace, sp):
 
 def validate_sp_access_constraints(trace, sp):
     """
-    Valida accesos incompatibles con el estado global de la SP.
+    Valida accesos incompatibles con el estado temporal de la SP.
     """
     violations = []
 
@@ -147,7 +147,11 @@ def validate_sp_access_constraints(trace, sp):
         if not event.get("gdpr:access"):
             continue
 
-        if sp.erased:
+        # 1️⃣ Acceso tras borrado (CON TIMESTAMP)
+        if (
+            sp.erasure_timestamp
+            and event["time:timestamp"] > sp.erasure_timestamp
+        ):
             violations.append({
                 "type": "sp_access_after_erasure",
                 "severity": "critical",
@@ -155,6 +159,7 @@ def validate_sp_access_constraints(trace, sp):
                 "events": [event]
             })
 
+        # 2️⃣ Acceso durante restricción
         elif sp.processing_restricted:
             violations.append({
                 "type": "sp_access_during_restriction",
@@ -163,6 +168,7 @@ def validate_sp_access_constraints(trace, sp):
                 "events": [event]
             })
 
+        # 3️⃣ Acceso tras expiración del consentimiento
         elif (
             sp.consent_expiration_timestamp
             and event["time:timestamp"] > sp.consent_expiration_timestamp
@@ -174,8 +180,8 @@ def validate_sp_access_constraints(trace, sp):
                 "events": [event]
             })
 
-
     return violations
+
 
 def validate_sp_obligations(trace, sp):
     violations = []

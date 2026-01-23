@@ -1,6 +1,7 @@
 from gdpr.importers import load_event_log
 from gdpr.pipelines import build_compliant_trace
 from gdpr.validators.validators import validate_trace
+from gdpr.generators import print_violations_summary
 
 def print_trace(trace, title):
     print("\n" + "=" * 60)
@@ -27,7 +28,7 @@ def test_inspect_compliant_trace():
     print_trace(compliant, "GDPR-COMPLIANT TRACE")
 
     violations = validate_trace(compliant)
-    print("\nViolations detected:", violations)
+    print_violations_summary(violations)
 
     assert len(compliant) > len(original)
 

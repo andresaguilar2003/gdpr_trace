@@ -490,7 +490,7 @@ def insert_breach_events(trace):
 # requestInfo → provideInfo (≤ 30 días)
 
 # Simular ejercicio de derechos ARCO
-RIGHTS_PROBABILITY = 0.2     # 20% de los casos ejercen derechos
+RIGHTS_PROBABILITY = 1     # 20% de los casos ejercen derechos
 MAX_RESPONSE_DAYS = 30
 from random import random, randint
 
@@ -809,3 +809,26 @@ def _insert_access_after_erasure(trace):
         access["gdpr:access"] = True
         access["time:timestamp"] += timedelta(minutes=5)
         trace._list.append(access)
+
+
+
+#####################################
+#VISTA DE VIOLACIONES
+#####################################
+from collections import defaultdict
+
+def print_violations_summary(violations):
+    grouped = defaultdict(list)
+
+    for v in violations:
+        grouped[v["type"]].extend(v.get("events", []))
+
+    print("\nVIOLATIONS SUMMARY")
+    print("-" * 40)
+
+    for vtype, events in grouped.items():
+        print(f"{vtype}: {len(events)} event(s)")
+        for e in events:
+            print(
+                f"  - {e['time:timestamp']} | {e['concept:name']}"
+            )

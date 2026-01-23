@@ -30,6 +30,7 @@ class StickyPolicy:
 
     processing_restricted: bool = False
     erased: bool = False
+    erasure_timestamp: Optional[datetime] = None
 
     access_history: List[dict] = field(default_factory=list)
 
@@ -70,6 +71,8 @@ def build_sticky_policy_from_trace(trace) -> StickyPolicy:
         # Borrado de datos
         if name == "gdpr:eraseData":
             sp.erased = True
+            sp.erasure_timestamp = event["time:timestamp"]
+
 
         # Accesos a datos
         if event.get("gdpr:access"):
