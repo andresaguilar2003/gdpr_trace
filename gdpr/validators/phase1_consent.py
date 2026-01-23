@@ -53,7 +53,9 @@ def validate_implicit_consent(trace):
     violations = []
 
     for e in get_events(trace, GDPR_EVENTS["CONSENT"]):
-        if not e.get("gdpr:explicit", False):
+        consent_type = e.get("gdpr:consent_type", "implicit")
+
+        if consent_type != "explicit":
             violations.append({
                 "type": "implicit_consent",
                 "severity": "medium",
@@ -62,3 +64,4 @@ def validate_implicit_consent(trace):
             })
 
     return violations
+

@@ -36,6 +36,9 @@ def validate_sticky_policy(trace):
     # 4. Accesos incompatibles con el estado de la SP
     violations.extend(validate_sp_access_constraints(trace, sp))
 
+    violations.extend(validate_sp_obligations(trace, sp))
+
+
     return violations
 
 
@@ -160,12 +163,37 @@ def validate_sp_access_constraints(trace, sp):
                 "events": [event]
             })
 
-        elif sp.consent_expired:
+        elif (
+            sp.consent_expiration_timestamp
+            and event["time:timestamp"] > sp.consent_expiration_timestamp
+        ):
             violations.append({
                 "type": "sp_access_after_consent_expiration",
                 "severity": "high",
                 "message": "Acceso a datos tras la expiración del consentimiento",
                 "events": [event]
             })
+
+
+    return violations
+
+def validate_sp_obligations(trace, sp):
+    violations = []
+
+    if "log_access" in sp.obligations:
+        for event in trace:
+            if event.get("gdpr:access"):
+                has_log = any(
+                    e["concept:name"] == "gdpr:accessLog"
+                    and e["time:timestamp"] >= event["time:timestamp"]
+                    for e in trace
+                )
+                if not has_log:
+                    violations.append({
+                        "type": "sp_missing_access_log",
+                        "severity": "medium",
+                        "message": "Acceso sin obligación de logging cumplida",
+                        "events": [event]
+                    })
 
     return violations

@@ -1,7 +1,7 @@
 # gdpr/sticky_policies.py
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Set, Optional
 
 
@@ -23,6 +23,10 @@ class StickyPolicy:
     consent_timestamp: Optional[datetime] = None
     consent_expired: bool = False
     max_retention_time: Optional[datetime] = None
+    consent_expiration_timestamp: Optional[datetime] = None
+
+    obligations: Set[str] = field(default_factory=set)
+
 
     processing_restricted: bool = False
     erased: bool = False
@@ -43,9 +47,18 @@ def build_sticky_policy_from_trace(trace) -> StickyPolicy:
             sp.consent_given = True
             sp.consent_timestamp = event["time:timestamp"]
             sp.purposes.add(event.get("gdpr:purpose", "unspecified"))
+            sp.obligations.add("log_access")
 
-        if name == "gdpr:consentExpired":
-            sp.consent_expired = True
+            max_days = event.get("gdpr:max_time_days")
+            if max_days:
+                sp.consent_expiration_timestamp = (
+                    sp.consent_timestamp + timedelta(days=max_days)
+                )
+
+
+        elif name == "gdpr:consentExpired":
+            sp.consent_expiration_timestamp = event["time:timestamp"]
+
 
         # Restricción de tratamiento
         if name == "gdpr:restrictProcessing":
