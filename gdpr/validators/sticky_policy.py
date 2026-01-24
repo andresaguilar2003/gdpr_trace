@@ -38,6 +38,7 @@ def validate_sticky_policy(trace):
 
     violations.extend(validate_sp_obligations(trace, sp))
 
+    violations.extend(validate_sp_third_parties(sp))
 
     return violations
 
@@ -201,5 +202,46 @@ def validate_sp_obligations(trace, sp):
                         "message": "Acceso sin obligación de logging cumplida",
                         "events": [event]
                     })
+
+    return violations
+
+# ============================================================
+# TERCEROS (THIRD PARTIES) – VALIDACIÓN SP-ONLY
+# ============================================================
+
+def validate_sp_third_parties(sp):
+    """
+    Valida que los terceros respeten el estado global de la Sticky Policy.
+    Validación SP-only (sin eventos).
+    """
+    violations = []
+
+    if not sp.third_parties:
+        return violations
+
+    for tp_name, tp in sp.third_parties.items():
+        is_active = tp.get("active", False)
+
+        # 1️⃣ Tercero activo tras borrado
+        if sp.erased and is_active:
+            violations.append({
+                "type": "sp_third_party_after_erasure",
+                "severity": "critical",
+                "message": (
+                    f"Tercero '{tp_name}' sigue activo tras el borrado de los datos"
+                ),
+                "events": []
+            })
+
+        # 2️⃣ Tercero activo tras expiración del consentimiento
+        if sp.consent_expired and is_active:
+            violations.append({
+                "type": "sp_third_party_after_consent_expiration",
+                "severity": "high",
+                "message": (
+                    f"Tercero '{tp_name}' sigue activo tras la expiración del consentimiento"
+                ),
+                "events": []
+            })
 
     return violations

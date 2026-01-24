@@ -10,7 +10,9 @@ from gdpr.generators import (
     enrich_real_events_with_gdpr,
     insert_access_logs_and_history,
     insert_breach_events,
-    insert_data_subject_rights
+    insert_data_subject_rights,
+    insert_third_party_flow,
+    
 )
 
 from gdpr.sticky_policies import build_sticky_policy_from_trace
@@ -43,6 +45,7 @@ def build_compliant_trace(trace):
     )
 
     insert_consent_expiration(trace)
+    insert_third_party_flow(trace)
     insert_remove_data_flow(trace)
     finalize_erasure_after_loop(trace)
     insert_rectification(trace)

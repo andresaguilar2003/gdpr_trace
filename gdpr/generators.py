@@ -490,7 +490,7 @@ def insert_breach_events(trace):
 # requestInfo → provideInfo (≤ 30 días)
 
 # Simular ejercicio de derechos ARCO
-RIGHTS_PROBABILITY = 1     # 20% de los casos ejercen derechos
+RIGHTS_PROBABILITY = 0.2     # 20% de los casos ejercen derechos
 MAX_RESPONSE_DAYS = 30
 from random import random, randint
 
@@ -599,6 +599,83 @@ def finalize_erasure_after_loop(trace):
         last_erase_index + 2,
         create_erase_all_copies_event(base_ts + timedelta(minutes=10))
     )
+
+
+# ============================================================
+# EXTENSIÓN – TERCEROS (Third Parties)
+# ============================================================
+
+THIRD_PARTY_PROBABILITY = 0.3
+REVOKE_THIRD_PARTY_PROBABILITY = 0.3
+
+THIRD_PARTIES = [
+    "AnalyticsProvider",
+    "PaymentGateway",
+    "CloudStorageProvider"
+]
+
+def create_share_data_event(timestamp, third_party, purpose, access_type, retention_days=None):
+    event = create_gdpr_event(
+        name=GDPR_EVENTS["SHARE_DATA"],
+        timestamp=timestamp,
+        actor="Controller",
+        purpose=purpose
+    )
+    event["gdpr:third_party"] = third_party
+    event["gdpr:access"] = access_type
+    event["gdpr:retention_days"] = retention_days
+    return event
+
+
+def create_revoke_third_party_event(timestamp, third_party):
+    event = create_gdpr_event(
+        name=GDPR_EVENTS["REVOKE_THIRD_PARTY"],
+        timestamp=timestamp,
+        actor="Controller",
+        purpose="revoke_third_party_access"
+    )
+    event["gdpr:third_party"] = third_party
+    return event
+
+
+def insert_third_party_flow(trace):
+    if random() > THIRD_PARTY_PROBABILITY:
+        return
+
+    # Buscar consentimiento
+    consent_event = None
+    for event in trace:
+        if event["concept:name"] == GDPR_EVENTS["CONSENT"]:
+            consent_event = event
+            break
+
+    if consent_event is None:
+        return
+
+    base_ts = consent_event["time:timestamp"] + timedelta(days=1)
+
+    third_party = choice(THIRD_PARTIES)
+    access_type = choice([GDPR_EVENTS["READ"], GDPR_EVENTS["WRITE"]])
+
+    share_event = create_share_data_event(
+        timestamp=base_ts,
+        third_party=third_party,
+        purpose="service_support",
+        access_type=access_type,
+        retention_days=90
+    )
+
+    trace.append(share_event)
+
+    # Posible revocación posterior
+    if random() < REVOKE_THIRD_PARTY_PROBABILITY:
+        revoke_ts = base_ts + timedelta(days=30)
+        revoke_event = create_revoke_third_party_event(
+            revoke_ts,
+            third_party
+        )
+        trace.append(revoke_event)
+
 
 
 ###################################################
