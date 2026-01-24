@@ -43,9 +43,10 @@ def build_compliant_trace(trace):
         trace,
         default_purpose=trace.attributes["gdpr:default_purpose"]
     )
+    insert_third_party_flow(trace)
 
     insert_consent_expiration(trace)
-    insert_third_party_flow(trace)
+
     insert_remove_data_flow(trace)
     finalize_erasure_after_loop(trace)
     insert_rectification(trace)

@@ -22,7 +22,7 @@ GDPR_EVENTS = {
     "DEFAULT_GDPR_PURPOSE": "gdpr:service_provision",
     "REMOVE_SP_LOG": "gdpr:removeSPLog",
     "ERASE_ALL_COPIES": "gdpr:eraseAllCopies",
-    "SHARE_DATA": "gdpr:shareData",
-    "REVOKE_THIRD_PARTY": "gdpr:revokeThirdParty"
+    "SHARE_DATA": "gdpr:shareDataWithThirdParty",
+    "REVOKE_THIRD_PARTY": "gdpr:revokeThirdPartyAccess",
 
 }

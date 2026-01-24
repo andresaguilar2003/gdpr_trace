@@ -77,6 +77,18 @@ def validate_sp_internal_consistency(sp):
             "events": []
         })
 
+        for tp_name, tp in sp.third_parties.items():
+            if tp.get("active") and not sp.consent_given:
+                violations.append({
+                    "type": "sp_third_party_without_consent",
+                    "severity": "critical",
+                    "message": (
+                        f"Tercero '{tp_name}' activo sin consentimiento válido"
+                    ),
+                    "events": []
+                })
+
+
     return violations
 
 
@@ -243,5 +255,21 @@ def validate_sp_third_parties(sp):
                 ),
                 "events": []
             })
+
+        # 3️⃣ Propósito del tercero no autorizado
+        tp_purposes = tp.get("purposes", set())
+
+        for p in tp_purposes:
+            if p not in sp.purposes:
+                violations.append({
+                    "type": "sp_third_party_purpose_violation",
+                    "severity": "high",
+                    "message": (
+                        f"Tercero '{tp_name}' usa propósito '{p}' "
+                        "no autorizado por la Sticky Policy"
+                    ),
+                    "events": []
+                })
+
 
     return violations

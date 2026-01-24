@@ -102,23 +102,25 @@ def build_sticky_policy_from_trace(trace) -> StickyPolicy:
             sp.erasure_timestamp = ts
 
         # =====================================================
-        # TERCEROS (TRANSFERENCIAS)
+        # TERCEROS
         # =====================================================
-        if name == "gdpr:shareData":
-            third_party = event.get("gdpr:third_party")
-            if third_party:
-                sp.third_parties[third_party] = {
-                    "purposes": {event.get("gdpr:purpose")},
-                    "permissions": {event.get("gdpr:access")},
-                    "retention_days": event.get("gdpr:retention_days"),
-                    "shared_at": ts,
-                    "active": True
-                }
 
-        elif name == "gdpr:revokeThirdParty":
-            third_party = event.get("gdpr:third_party")
-            if third_party in sp.third_parties:
-                sp.third_parties[third_party]["active"] = False
+        if name == "gdpr:shareDataWithThirdParty":
+            tp_name = event.get("gdpr:third_party")
+            if not tp_name:
+                continue
+
+            sp.third_parties[tp_name] = {
+                "role": event.get("gdpr:role", "processor"),
+                "purposes": {event.get("gdpr:purpose", "unspecified")},
+                "active": True,
+                "shared_timestamp": event["time:timestamp"]
+            }
+
+        if name == "gdpr:revokeThirdPartyAccess":
+            tp_name = event.get("gdpr:third_party")
+            if tp_name in sp.third_parties:
+                sp.third_parties[tp_name]["active"] = False
 
         # =====================================================
         # ACCESOS

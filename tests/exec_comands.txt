@@ -79,3 +79,5 @@ python -m pytest tests/validators/test_access_after_erasure.py -s
 # =========================
 python -m pytest tests/sticky_policies/test_sp_no_access_after_erasure.py -s
 # Verifica que, según la Sticky Policy reconstruida, no existen accesos a datos personales tras un evento de borrado (eraseData)
+
+python -m pytest tests/sticky_policies/test_sp_third_party_after_erasure.py -s

@@ -614,35 +614,60 @@ THIRD_PARTIES = [
     "CloudStorageProvider"
 ]
 
-def create_share_data_event(timestamp, third_party, purpose, access_type, retention_days=None):
+
+def create_share_data_event(
+    timestamp,
+    third_party,
+    purpose,
+    role="processor",
+    retention_days=None
+):
+    """
+    Evento GDPR que representa la compartición de datos
+    con un tercero (Figura conceptual de terceros).
+    """
     event = create_gdpr_event(
         name=GDPR_EVENTS["SHARE_DATA"],
         timestamp=timestamp,
         actor="Controller",
         purpose=purpose
     )
+
     event["gdpr:third_party"] = third_party
-    event["gdpr:access"] = access_type
+    event["gdpr:role"] = role
     event["gdpr:retention_days"] = retention_days
+
+    # IMPORTANTE:
+    # Esto NO es un acceso directo a datos en la traza real
+    event["gdpr:is_processing"] = False
+
     return event
 
 
 def create_revoke_third_party_event(timestamp, third_party):
+    """
+    Evento que revoca el acceso de un tercero previamente autorizado.
+    """
     event = create_gdpr_event(
         name=GDPR_EVENTS["REVOKE_THIRD_PARTY"],
         timestamp=timestamp,
         actor="Controller",
         purpose="revoke_third_party_access"
     )
+
     event["gdpr:third_party"] = third_party
     return event
 
 
 def insert_third_party_flow(trace):
+    """
+    Inserta un flujo de compartición con terceros:
+    consent → share → (optional) revoke
+    """
     if random() > THIRD_PARTY_PROBABILITY:
         return
 
-    # Buscar consentimiento
+    # 1️⃣ Buscar consentimiento
     consent_event = None
     for event in trace:
         if event["concept:name"] == GDPR_EVENTS["CONSENT"]:
@@ -652,28 +677,30 @@ def insert_third_party_flow(trace):
     if consent_event is None:
         return
 
+    # 2️⃣ Momento base (siempre después del consentimiento)
     base_ts = consent_event["time:timestamp"] + timedelta(days=1)
 
     third_party = choice(THIRD_PARTIES)
-    access_type = choice([GDPR_EVENTS["READ"], GDPR_EVENTS["WRITE"]])
 
     share_event = create_share_data_event(
         timestamp=base_ts,
         third_party=third_party,
         purpose="service_support",
-        access_type=access_type,
+        role="processor",
         retention_days=90
     )
 
     trace.append(share_event)
 
-    # Posible revocación posterior
+    # 3️⃣ Posible revocación posterior
     if random() < REVOKE_THIRD_PARTY_PROBABILITY:
         revoke_ts = base_ts + timedelta(days=30)
+
         revoke_event = create_revoke_third_party_event(
             revoke_ts,
             third_party
         )
+
         trace.append(revoke_event)
 
 
