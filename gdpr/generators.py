@@ -58,18 +58,10 @@ def create_consent_expired_event(timestamp):
 
 
 
-# ============================================================
-# FIGURA 3 – INICIO DEL TRATAMIENTO
-# (informUser -> giveConsent)
-# ============================================================
-# Según la Figura 3, el usuario debe:
-# 1) Ser informado
-# 2) Dar consentimiento
-# antes de cualquier acceso a datos personales. (Todo esto es ANTES del SD MAIN)
 def insert_initial_consent_flow(trace, default_purpose="service_provision"):
     """
     Figura 3 – Inicio del tratamiento:
-    sendData → inform → consent
+    sendData → inform → consent → permissionGranted
     """
     first_ts = get_first_event_timestamp(trace)
 
@@ -82,7 +74,7 @@ def insert_initial_consent_flow(trace, default_purpose="service_provision"):
         GDPR_EVENTS["INFORM"],
         first_ts - timedelta(minutes=10),
         actor="Controller",
-        purpose="service_t"
+        purpose=default_purpose
     )
 
     consent_event = create_gdpr_event(
@@ -94,10 +86,20 @@ def insert_initial_consent_flow(trace, default_purpose="service_provision"):
     consent_event["gdpr:consent_type"] = "explicit"
     consent_event["gdpr:scope"] = "full"
 
+    permission_event = create_gdpr_event(
+        GDPR_EVENTS["PERMISSION_GRANTED"],
+        first_ts - timedelta(minutes=4),
+        actor="Controller",
+        purpose=default_purpose
+    )
+
+    permission_event["gdpr:legal_basis"] = "consent"
+
+
     trace.insert(0, send_data_event)
     trace.insert(1, inform_event)
     trace.insert(2, consent_event)
-
+    trace.insert(3, permission_event)
 
 
 # ============================================================
@@ -324,62 +326,58 @@ def create_permission_event(timestamp, access_type, purpose, legal_basis):
 # Enriquecer eventos reales con control de acceso GDPR
 # ------------------------------------------------------------
 def enrich_real_events_with_gdpr(trace):
-    consent_valid = True
+    consent_valid = False
     restriction_active = False
 
-    i = 0
-    while i < len(trace):
-        event = trace[i]
+    for event in trace:
         name = event["concept:name"]
 
-        # sendData no es acceso ni tratamiento
-        if name == GDPR_EVENTS["SEND_DATA"]:
-            i += 1
+        # ==========================
+        # TRANSICIONES DE ESTADO
+        # ==========================
+        if name == GDPR_EVENTS["PERMISSION_GRANTED"]:
+            consent_valid = True
             continue
 
-        if name in [GDPR_EVENTS["WITHDRAW"], GDPR_EVENTS["CONSENT_EXPIRED"]]:
+        if name in {
+            GDPR_EVENTS["WITHDRAW"],
+            GDPR_EVENTS["CONSENT_EXPIRED"]
+        }:
             consent_valid = False
+            continue
 
         if name == GDPR_EVENTS["RESTRICT"]:
             restriction_active = True
+            continue
 
         if name == GDPR_EVENTS["LIFT_RESTRICTION"]:
             restriction_active = False
-
-        if event.get("gdpr:event"):
-            i += 1
             continue
 
+        # ==========================
+        # EVENTOS GDPR (no reales)
+        # ==========================
+        if event.get("gdpr:event"):
+            continue
+
+        # ==========================
+        # EVENTOS REALES
+        # ==========================
         if not consent_valid:
             event["gdpr:blocked_reason"] = "missing_or_expired_consent"
-            i += 1
             continue
 
         if restriction_active:
             event["gdpr:blocked_reason"] = "processing_restricted"
-            i += 1
             continue
-
 
         access_type = classify_data_access(event["concept:name"])
 
-        # Insertar evento de autorización antes del acceso
-        permission_event = create_permission_event(
-            timestamp=event["time:timestamp"] - timedelta(seconds=1),
-            access_type=access_type,
-            purpose="service_provision",
-            legal_basis="consent"
-        )
-
-        trace.insert(i, permission_event)
-        i += 1
-
         event["gdpr:access"] = access_type
-        event["gdpr:access_mode"] = "single"  # preparado para combine
+        event["gdpr:access_mode"] = "single"
         event["gdpr:actor"] = "Controller"
         event["gdpr:purpose"] = "service_provision"
 
-        i += 1
 
 
 # ------------------------------------------------------------

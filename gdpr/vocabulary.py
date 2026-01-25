@@ -24,5 +24,5 @@ GDPR_EVENTS = {
     "ERASE_ALL_COPIES": "gdpr:eraseAllCopies",
     "SHARE_DATA": "gdpr:shareDataWithThirdParty",
     "REVOKE_THIRD_PARTY": "gdpr:revokeThirdPartyAccess",
-
+    "PERMISSION_GRANTED": "gdpr:permissionGranted",
 }

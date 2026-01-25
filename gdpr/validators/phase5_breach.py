@@ -27,11 +27,11 @@ def validate_breach_notification_time(trace):
             if n["time:timestamp"] > detect_ts
         ]
 
-        # ❌ No se notificó
         if not related_notify:
             violations.append({
                 "type": "missing_breach_notification",
                 "severity": "critical",
+                "blocking": True,   # ⬅️
                 "message": "Brecha detectada sin notificación",
                 "events": [detect]
             })
@@ -40,7 +40,6 @@ def validate_breach_notification_time(trace):
         notify = related_notify[0]
         notify_ts = notify["time:timestamp"]
 
-        # ❌ Notificación tardía (>72h)
         if notify_ts > detect_ts + timedelta(hours=72):
             violations.append({
                 "type": "late_breach_notification",
@@ -50,3 +49,4 @@ def validate_breach_notification_time(trace):
             })
 
     return violations
+

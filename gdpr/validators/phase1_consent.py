@@ -25,16 +25,15 @@ def validate_consent_before_access(trace):
         violations.append({
             "type": "missing_consent",
             "severity": "high",
+            "blocking": True,   # ⬅️
             "message": "Hay accesos a datos personales sin consentimiento previo",
             "events": access_events
         })
-        return violations
+        return violations  # ⛔ cortar aquí
 
-    # ✅ Si no hay accesos, no hay violación
     if not access_events:
         return violations
-    
-    # ❌ Accesos antes del consentimiento
+
     consent_ts = consent_events[0]["time:timestamp"]
 
     for access in access_events:
@@ -42,11 +41,13 @@ def validate_consent_before_access(trace):
             violations.append({
                 "type": "consent_after_access",
                 "severity": "high",
+                "blocking": True,   # ⬅️
                 "message": "Acceso a datos antes de obtener el consentimiento",
                 "events": [access]
             })
 
     return violations
+
 
 
 def validate_implicit_consent(trace):

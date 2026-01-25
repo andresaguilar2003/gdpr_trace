@@ -32,6 +32,7 @@ def validate_access_after_consent_expiration(trace):
             violations.append({
                 "type": "access_after_consent_expiration",
                 "severity": "high",
+                "blocking": True, 
                 "message": (
                     "Acceso a datos personales tras la expiración del consentimiento"
                 ),
@@ -54,6 +55,7 @@ def validate_withdrawn_consent(trace):
             violations.append({
                 "type": "access_after_withdrawal",
                 "severity": "high",
+                "blocking": True,   # ⬅️ AQUÍ
                 "message": "Acceso a datos tras retirada del consentimiento",
                 "events": [event]
             })

@@ -19,7 +19,7 @@ def print_trace(trace, title):
 import copy
 
 def test_inspect_compliant_trace():
-    log = load_event_log("data/input/test/log_long_case.xes")
+    log = load_event_log("data/input/Sepsis Cases - Event Log.xes.gz")
 
     original = copy.deepcopy(log[0])
     compliant = build_compliant_trace(copy.deepcopy(log[0]))

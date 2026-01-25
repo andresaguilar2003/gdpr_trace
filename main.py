@@ -2,6 +2,7 @@ from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 from pm4py.objects.log.obj import EventLog
 import os
 import matplotlib.pyplot as plt
+from collections import Counter
 
 from gdpr.importers import load_event_log
 from gdpr.pipelines import (
@@ -68,6 +69,8 @@ non_compliant_log = []
 remediated_log = []
 trace_evidence = []
 
+violation_counter = Counter()
+
 for trace in log:
 
     # 1️⃣ COMPLIANT
@@ -86,6 +89,11 @@ for trace in log:
 
     # 3️⃣ VALIDACIÓN
     violations = validate_trace(non_compliant)
+
+    # ⬅️ NUEVO: contar violaciones
+    for v in violations:
+        violation_counter[v["type"]] += 1
+
     annotate_violations_on_trace(non_compliant, violations)
 
     # 4️⃣ RECOMENDACIONES
@@ -148,6 +156,13 @@ for trace in log:
         }
     })
 
+# ============================================================
+# RESUMEN GLOBAL DE VIOLACIONES
+# ============================================================
+
+print("\n=== DISTRIBUCIÓN DE VIOLACIONES ===")
+for vtype, count in violation_counter.most_common():
+    print(f"{vtype}: {count}")
 
 
 # ============================================================

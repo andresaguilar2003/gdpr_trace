@@ -29,7 +29,6 @@ def validate_data_minimization(trace):
 
 def validate_purpose_limitation(trace):
     violations = []
-
     allowed_purpose = trace.attributes.get("gdpr:default_purpose")
 
     for e in trace:
@@ -37,39 +36,57 @@ def validate_purpose_limitation(trace):
             violations.append({
                 "type": "purpose_violation",
                 "severity": "high",
+                "blocking": True,  
                 "message": "Uso de datos para un propósito no autorizado",
                 "events": [e]
             })
 
     return violations
 
+
 def validate_access_without_permission(trace):
     violations = []
+    consent_active = False
+    processing_restricted = False
 
-    for i, e in enumerate(trace):
-        if not e.get("gdpr:access"):
-            continue
+    for event in trace:
+        name = event["concept:name"]
 
-        if i == 0:
-            violations.append({
-                "type": "access_without_permission",
-                "severity": "high",
-                "message": "Acceso a datos sin autorización explícita",
-                "events": [e]
-            })
-            continue
+        if name == "gdpr:permissionGranted":
+            consent_active = True
 
-        prev_event = trace[i - 1]
+        elif name in {"gdpr:withdrawConsent", "gdpr:consentExpired"}:
+            consent_active = False
 
-        if prev_event["concept:name"] != "gdpr:permissionGranted":
-            violations.append({
-                "type": "access_without_permission",
-                "severity": "high",
-                "message": "Acceso a datos sin evento permissionGranted previo",
-                "events": [e]
-            })
+        elif name == "gdpr:restrictProcessing":
+            processing_restricted = True
+
+        elif name == "gdpr:liftRestriction":
+            processing_restricted = False
+
+        elif event.get("gdpr:access"):
+            if not consent_active:
+                violations.append({
+                    "type": "access_without_consent",
+                    "severity": "high",
+                    "blocking": True,
+                    "message": "Acceso a datos sin consentimiento activo",
+                    "events": [event]
+                })
+
+            elif processing_restricted:
+                violations.append({
+                    "type": "access_during_restriction",
+                    "severity": "high",
+                    "blocking": True,
+                    "message": "Acceso a datos durante restricción de procesamiento",
+                    "events": [event]
+                })
 
     return violations
+
+
+
 
 
 def validate_missing_access_log(trace):

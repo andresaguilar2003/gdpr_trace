@@ -133,6 +133,7 @@ def validate_sp_access_constraints(trace, sp):
             violations.append({
                 "type": "sp_access_after_erasure",
                 "severity": "critical",
+                "blocking": True,   # ⬅️
                 "message": "Acceso a datos tras el borrado completo",
                 "events": [event]
             })
@@ -141,6 +142,7 @@ def validate_sp_access_constraints(trace, sp):
             violations.append({
                 "type": "sp_access_during_restriction",
                 "severity": "high",
+                "blocking": True,   # ⬅️
                 "message": "Acceso a datos durante restricción de tratamiento",
                 "events": [event]
             })
@@ -149,11 +151,13 @@ def validate_sp_access_constraints(trace, sp):
             violations.append({
                 "type": "sp_access_after_consent_expiration",
                 "severity": "high",
+                "blocking": True,   # ⬅️
                 "message": "Acceso a datos tras la expiración del consentimiento",
                 "events": [event]
             })
 
     return violations
+
 
 
 # ============================================================
@@ -218,6 +222,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_third_party_without_consent",
                 "severity": "critical",
+                "blocking": True,
                 "message": f"Tercero '{tp_name}' activo sin consentimiento válido",
                 "events": []
             })
@@ -229,6 +234,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_third_party_after_erasure",
                 "severity": "critical",
+                "blocking": True,
                 "message": f"Tercero '{tp_name}' sigue activo tras el borrado",
                 "events": []
             })
@@ -237,6 +243,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_third_party_not_notified_of_erasure",
                 "severity": "high",
+                "blocking": True,
                 "message": f"Tercero '{tp_name}' no fue notificado del borrado",
                 "events": []
             })
@@ -248,6 +255,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_third_party_missing_legal_basis",
                 "severity": "critical",
+                "blocking": True,
                 "message": f"Tercero '{tp_name}' como responsable independiente sin base legal",
                 "events": []
             })
@@ -256,6 +264,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_processor_with_own_legal_basis",
                 "severity": "high",
+                "blocking": True,
                 "message": f"Encargado '{tp_name}' declara base legal propia",
                 "events": []
             })
@@ -268,6 +277,7 @@ def validate_sp_third_parties(sp):
                 violations.append({
                     "type": "sp_illegal_international_transfer",
                     "severity": "critical",
+                    "blocking": True,
                     "message": f"Transferencia internacional sin salvaguardas a '{tp_name}'",
                     "events": []
                 })
@@ -289,6 +299,7 @@ def validate_sp_third_parties(sp):
                 violations.append({
                     "type": "sp_third_party_retention_violation",
                     "severity": "high",
+                    "blocking": True,
                     "message": (
                         f"Tercero '{tp_name}' supera el periodo de retención autorizado"
                     ),
@@ -303,6 +314,7 @@ def validate_sp_third_parties(sp):
             violations.append({
                 "type": "sp_third_party_permission_escalation",
                 "severity": "high",
+                "blocking": True,
                 "message": f"Tercero '{tp_name}' tiene permisos no autorizados",
                 "events": []
             })
@@ -315,6 +327,7 @@ def validate_sp_third_parties(sp):
                 violations.append({
                     "type": "sp_third_party_purpose_violation",
                     "severity": "high",
+                    "blocking": True,
                     "message": f"Tercero '{tp_name}' usa propósito no autorizado",
                     "events": []
                 })
