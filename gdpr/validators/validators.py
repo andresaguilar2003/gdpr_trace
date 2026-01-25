@@ -9,12 +9,25 @@ from .sticky_policy import validate_sticky_policy
 def annotate_violations_on_trace(trace, violations):
     """
     Marca los eventos de la traza que causan violaciones GDPR.
+    Compatible con pm4py Event.
     """
     for v in violations:
         for event in v.get("events", []):
-            event["gdpr:violation"] = v["type"]
+
+            # Inicializar lista si no existe
+            if "gdpr:violations" not in event:
+                event["gdpr:violations"] = []
+
+            event["gdpr:violations"].append({
+                "type": v["type"],
+                "severity": v.get("severity", "unknown"),
+                "message": v.get("message")
+            })
+
+            # Campos planos (útiles para XES simples)
             event["gdpr:violation_severity"] = v.get("severity", "unknown")
             event["gdpr:violation_message"] = v.get("message")
+
 
 def deduplicate_sp_violations(violations):
     sp_types = {
@@ -49,8 +62,6 @@ def validate_trace(trace):
     violations.extend(validate_breach_notification_time(trace))
     violations.extend(validate_data_subject_rights(trace))
     violations.extend(validate_sticky_policy(trace))
-
-    violations = deduplicate_sp_violations(violations)
 
 
     return violations

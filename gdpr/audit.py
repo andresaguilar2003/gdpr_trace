@@ -5,26 +5,27 @@ def generate_audit_report(trace_record):
 
     findings = []
 
+    # 🔴 Violaciones GDPR reales
+    for v in trace_record.get("violations", []):
+        findings.append({
+            "type": "gdpr_violation",
+            "violation": v.get("type"),
+            "severity": v.get("severity"),
+            "legal_reference": v.get("legal_reference"),
+            "message": v.get("message"),
+            "num_events": len(v.get("events", []))
+        })
+
+    # 🟡 Sticky Policy alerts (gobernanza)
     for rec in trace_record.get("recommendations", []):
-        if "violation" in rec:
-            findings.append({
-                "type": "technical_violation",
-                "violation": rec.get("violation"),
-                "severity": rec.get("severity"),
-                "risk_level": rec.get("risk_level"),
-                "legal_reference": rec.get("legal_reference"),
-                "evidence": rec.get("recommendation"),
-                "recommended_action": rec.get("title")
-            })
-        elif rec.get("type", "").startswith("sp_"):
+        if rec.get("type", "").startswith("sp_"):
             findings.append({
                 "type": "sticky_policy_alert",
                 "policy_issue": rec.get("type"),
                 "severity": rec.get("severity"),
-                "evidence": rec.get("message"),
+                "message": rec.get("message"),
                 "recommended_action": "Organizational / governance action required"
             })
-
 
     risk_level = trace_record.get("risk_level", "none")
 

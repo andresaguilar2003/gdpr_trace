@@ -9,16 +9,15 @@ from typing import List, Set, Optional, Dict
 class StickyPolicy:
     """
     Sticky Policy (SP) asociada a un dato personal.
-    Se reconstruye a partir de la traza.
+    Evidencia normativa reconstruida a partir de la traza.
     """
 
     # Identidad del dato
     data_id: str
-
     owner: Optional[str] = None
     controller: Optional[str] = None
 
-    # Autorizaciones principales
+    # Autorizaciones globales
     purposes: Set[str] = field(default_factory=set)
     permissions: Set[str] = field(default_factory=set)
 
@@ -28,23 +27,13 @@ class StickyPolicy:
     consent_expired: bool = False
     consent_expiration_timestamp: Optional[datetime] = None
 
-    # Retención
+    # Retención global
     max_retention_time: Optional[datetime] = None
 
-    # Obligaciones (ej. logging)
+    # Obligaciones
     obligations: Set[str] = field(default_factory=set)
 
-    # 🔹 TERCEROS
-    # Cada tercero tiene una "mini-SP" derivada
-    # {
-    #   "ThirdPartyA": {
-    #       "purposes": {...},
-    #       "permissions": {...},
-    #       "retention_days": int | None,
-    #       "shared_at": datetime,
-    #       "active": bool
-    #   }
-    # }
+    # 🔹 TERCEROS (mini-Sticky Policies)
     third_parties: Dict[str, dict] = field(default_factory=dict)
 
     # Estados especiales
@@ -52,14 +41,15 @@ class StickyPolicy:
     erased: bool = False
     erasure_timestamp: Optional[datetime] = None
 
-    # Historial de accesos
+    # Historial
     access_history: List[dict] = field(default_factory=list)
 
 
+# ============================================================
+# BUILDER
+# ============================================================
+
 def build_sticky_policy_from_trace(trace) -> StickyPolicy:
-    """
-    Reconstruye la Sticky Policy a partir de una traza GDPR-enriquecida.
-    """
     sp = StickyPolicy(
         data_id=trace.attributes.get("concept:name", "unknown")
     )
@@ -68,9 +58,9 @@ def build_sticky_policy_from_trace(trace) -> StickyPolicy:
         name = event["concept:name"]
         ts = event["time:timestamp"]
 
-        # =====================================================
+        # ----------------------------------------------------
         # CONSENTIMIENTO
-        # =====================================================
+        # ----------------------------------------------------
         if name == "gdpr:giveConsent":
             sp.consent_given = True
             sp.consent_timestamp = ts
@@ -80,51 +70,73 @@ def build_sticky_policy_from_trace(trace) -> StickyPolicy:
             max_days = event.get("gdpr:max_time_days")
             if max_days:
                 sp.consent_expiration_timestamp = ts + timedelta(days=max_days)
+                sp.max_retention_time = sp.consent_expiration_timestamp
 
         elif name == "gdpr:consentExpired":
             sp.consent_expired = True
             sp.consent_expiration_timestamp = ts
 
-        # =====================================================
-        # RESTRICCIÓN DE TRATAMIENTO
-        # =====================================================
+        # ----------------------------------------------------
+        # RESTRICCIÓN
+        # ----------------------------------------------------
         if name == "gdpr:restrictProcessing":
             sp.processing_restricted = True
 
         elif name == "gdpr:liftRestriction":
             sp.processing_restricted = False
 
-        # =====================================================
+        # ----------------------------------------------------
         # BORRADO
-        # =====================================================
+        # ----------------------------------------------------
         if name == "gdpr:eraseData":
             sp.erased = True
             sp.erasure_timestamp = ts
 
-        # =====================================================
-        # TERCEROS
-        # =====================================================
+            # Propagación normativa (Art. 19)
+            for tp in sp.third_parties.values():
+                tp["notified_of_erasure"] = True
+                tp["active"] = False
 
+        # ----------------------------------------------------
+        # TERCEROS
+        # ----------------------------------------------------
         if name == "gdpr:shareDataWithThirdParty":
             tp_name = event.get("gdpr:third_party")
             if not tp_name:
                 continue
 
-            sp.third_parties[tp_name] = {
-                "role": event.get("gdpr:role", "processor"),
-                "purposes": {event.get("gdpr:purpose", "unspecified")},
-                "active": True,
-                "shared_timestamp": event["time:timestamp"]
-            }
+            retention_days = event.get("gdpr:retention_days")
+            retention_until = (
+                ts + timedelta(days=retention_days)
+                if retention_days else None
+            )
 
-        if name == "gdpr:revokeThirdPartyAccess":
+            tp = sp.third_parties.setdefault(tp_name, {
+                "role": event.get("gdpr:role", "processor"),
+                "purposes": set(),
+                "permissions": set(),
+                "active": True,
+                "shared_timestamp": ts,
+                "retention_until": retention_until,
+                "country": event.get("gdpr:country"),
+                "transfer_mechanism": event.get("gdpr:transfer_mechanism"),
+                "legal_basis": event.get("gdpr:legal_basis"),
+                "own_legal_basis": event.get("gdpr:own_legal_basis", False),
+                "notified_of_erasure": False,
+            })
+
+            tp["purposes"].add(event.get("gdpr:purpose", "unspecified"))
+            if event.get("gdpr:access"):
+                tp["permissions"].add(event["gdpr:access"])
+
+        elif name == "gdpr:revokeThirdPartyAccess":
             tp_name = event.get("gdpr:third_party")
             if tp_name in sp.third_parties:
                 sp.third_parties[tp_name]["active"] = False
 
-        # =====================================================
+        # ----------------------------------------------------
         # ACCESOS
-        # =====================================================
+        # ----------------------------------------------------
         if event.get("gdpr:access"):
             sp.permissions.add(event["gdpr:access"])
             sp.access_history.append({

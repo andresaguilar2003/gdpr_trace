@@ -9,7 +9,7 @@ def export_recommendations(data, output_dir, filename="recommendations.json"):
     os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, filename)
 
-    clean_data = sanitize_recommendations(data)
+    clean_data = sanitize(data)
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(clean_data, f, indent=2, ensure_ascii=False)
@@ -18,7 +18,7 @@ def export_recommendations(data, output_dir, filename="recommendations.json"):
 
 
 # ============================================================
-# SERIALIZACIÓN
+# SERIALIZACIÓN GENÉRICA
 # ============================================================
 
 def serialize_event(event):
@@ -28,57 +28,38 @@ def serialize_event(event):
     serialized = {}
 
     for k, v in event.items():
-        if isinstance(v, datetime):
-            serialized[k] = v.isoformat()
-        else:
-            serialized[k] = v
+        serialized[k] = sanitize(v)
 
     return serialized
 
 
-def sanitize_violation_list(violations):
+def sanitize(obj):
     """
-    Limpia una lista de violaciones (normal o remediada).
+    Limpia recursivamente cualquier estructura para JSON.
     """
-    clean = []
 
-    for v in violations:
-        v_copy = dict(v)
+    # datetime → ISO
+    if isinstance(obj, datetime):
+        return obj.isoformat()
 
-        if "events" in v_copy:
-            v_copy["events"] = [
-                serialize_event(e) for e in v_copy["events"]
-            ]
+    # pm4py Event (dict-like)
+    if hasattr(obj, "items") and obj.__class__.__name__ == "Event":
+        return serialize_event(obj)
 
-        clean.append(v_copy)
+    # dict
+    if isinstance(obj, dict):
+        return {
+            k: sanitize(v)
+            for k, v in obj.items()
+        }
 
-    return clean
+    # list / tuple / set
+    if isinstance(obj, (list, tuple, set)):
+        return [sanitize(v) for v in obj]
 
+    # tipos básicos
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
 
-def sanitize_recommendations(data):
-    """
-    Limpia toda la estructura de recomendaciones para JSON.
-    """
-    if not isinstance(data, list):
-        return data
-
-    sanitized = []
-
-    for trace_rec in data:
-        tr = dict(trace_rec)
-
-        # Violaciones originales
-        if "violations" in tr:
-            tr["violations"] = sanitize_violation_list(tr["violations"])
-
-        # Violaciones tras remediación
-        remediation = tr.get("remediation")
-        if remediation and "corrected_violations" in remediation:
-            remediation["corrected_violations"] = sanitize_violation_list(
-                remediation["corrected_violations"]
-            )
-            tr["remediation"] = remediation
-
-        sanitized.append(tr)
-
-    return sanitized
+    # fallback defensivo (por si aparece algo raro)
+    return str(obj)
