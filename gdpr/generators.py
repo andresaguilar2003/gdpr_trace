@@ -146,7 +146,7 @@ def insert_consent_expiration(trace):
 # con restricción temporal
 # ============================================================
 
-REMOVE_PROBABILITY = 0.1
+REMOVE_PROBABILITY = 1 #0.1
 MAX_ERASE_DAYS = 7
 from random import random, randint
 from datetime import timedelta
@@ -231,7 +231,7 @@ def insert_remove_data_flow(trace):
 # FIGURA 3 – DERECHO DE RECTIFICACIÓN
 # ============================================================
 
-RECTIFY_PROBABILITY = 0.15   # 15% de las trazas
+RECTIFY_PROBABILITY = 1   # 15% de las trazas
 
 def create_rectify_event(timestamp):
     return create_gdpr_event(
@@ -259,7 +259,7 @@ def insert_rectification(trace):
 # FIGURA 3 – RESTRICCIÓN DEL TRATAMIENTO
 # ============================================================
 
-RESTRICT_PROBABILITY = 0.1
+RESTRICT_PROBABILITY = 1 #0.1
 RESTRICTION_DAYS = 30
 
 def create_restrict_event(timestamp):
@@ -436,7 +436,7 @@ def insert_access_logs_and_history(trace):
 # detectBreach → notifyBreach (≤ 72h)
 
 # Simular violaciones de datos
-BREACH_PROBABILITY = 0.05     # 5% de las trazas
+BREACH_PROBABILITY = 1     # 5% de las trazas
 MAX_NOTIFY_HOURS = 72
 
 # Crear eventos de violación de datos
@@ -488,7 +488,7 @@ def insert_breach_events(trace):
 # requestInfo → provideInfo (≤ 30 días)
 
 # Simular ejercicio de derechos ARCO
-RIGHTS_PROBABILITY = 0.2     # 20% de los casos ejercen derechos
+RIGHTS_PROBABILITY = 1     # 20% de los casos ejercen derechos
 MAX_RESPONSE_DAYS = 30
 from random import random, randint
 
@@ -603,7 +603,7 @@ def finalize_erasure_after_loop(trace):
 # EXTENSIÓN – TERCEROS (Third Parties)
 # ============================================================
 
-THIRD_PARTY_PROBABILITY = 0.3
+THIRD_PARTY_PROBABILITY = 1
 REVOKE_THIRD_PARTY_PROBABILITY = 0.3
 
 THIRD_PARTIES = [

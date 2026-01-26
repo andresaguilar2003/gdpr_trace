@@ -10,6 +10,22 @@ python -m pytest tests/test_traces/test_non_compliant_trace.py -s
 
 
 # =========================
+# COMPLIANT
+# =========================
+python -m pytest tests/compliant/test_happy_path_full_trace.py -s
+# Comprueba que una traza GDPR-compliant completa se genera correctamente sin violaciones
+
+python -m pytest tests/compliant/test_gdpr_invariants.py -s
+# Verifica que se cumplen los invariantes GDPR fundamentales (consentimiento, borrado, restricción)
+
+python -m pytest tests/compliant/test_pipeline_idempotency.py -s
+# Comprueba que el pipeline GDPR es idempotente y no introduce duplicados
+
+python -m pytest tests/compliant/test_access_and_accountability.py -s
+# Comprueba que los accesos a datos personales quedan correctamente reflejados mediante accountability
+
+
+# =========================
 # IMPORT
 # =========================
 
