@@ -27,13 +27,19 @@ def validate_processing_restriction(trace):
             restriction_active = False
 
         elif restriction_active and event.get("gdpr:access"):
-            violations.append({
-                "type": "access_during_restriction",
-                "severity": "high",
-                "blocking": True,   # ⬅️
-                "message": "Acceso a datos mientras el tratamiento estaba restringido",
-                "events": [event]
-            })
+            operation = event.get("gdpr:operation", "read")
+
+            if operation != "read":
+                violations.append({
+                    "type": "access_during_restriction",
+                    "severity": "high",
+                    "blocking": True,
+                    "message": (
+                        f"Operación '{operation}' durante restricción de tratamiento"
+                    ),
+                    "events": [event]
+                })
+
 
     return violations
 
@@ -68,10 +74,14 @@ def validate_access_after_erasure(trace):
             violations.append({
                 "type": "access_after_erasure",
                 "severity": "critical",
-                "blocking": True,   # ⬅️
-                "message": "Acceso a datos tras solicitud de borrado",
+                "blocking": True,
+                "message": (
+                    f"Operación '{e.get('gdpr:operation', 'unknown')}' "
+                    "tras solicitud de borrado"
+                ),
                 "events": [e]
             })
+
 
     return violations
 

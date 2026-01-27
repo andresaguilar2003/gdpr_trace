@@ -32,12 +32,14 @@ def validate_access_after_consent_expiration(trace):
             violations.append({
                 "type": "access_after_consent_expiration",
                 "severity": "high",
-                "blocking": True, 
+                "blocking": True,
                 "message": (
-                    "Acceso a datos personales tras la expiración del consentimiento"
+                    f"Acceso ({e.get('gdpr:operation', 'unknown')}) "
+                    "a datos tras la expiración del consentimiento"
                 ),
                 "events": [e]
             })
+
 
     return violations
 
@@ -52,12 +54,17 @@ def validate_withdrawn_consent(trace):
             consent_valid = False
 
         elif not consent_valid and event.get("gdpr:access"):
+            operation = event.get("gdpr:operation", "read")
+
             violations.append({
                 "type": "access_after_withdrawal",
                 "severity": "high",
-                "blocking": True,   # ⬅️ AQUÍ
-                "message": "Acceso a datos tras retirada del consentimiento",
+                "blocking": True,
+                "message": (
+                    f"Operación '{operation}' tras la retirada del consentimiento"
+                ),
                 "events": [event]
             })
 
     return violations
+

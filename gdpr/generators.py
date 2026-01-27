@@ -306,6 +306,22 @@ def classify_data_access(event_name):
     write_verbs = ["create", "update", "modify", "delete", "write", "set", "register"]
     return GDPR_EVENTS["WRITE"] if any(v in event_name.lower() for v in write_verbs) else GDPR_EVENTS["READ"]
 
+def classify_data_operation(event_name):
+    name = event_name.lower()
+
+    if any(v in name for v in ["delete", "erase", "remove"]):
+        return "delete"
+
+    if any(v in name for v in ["share", "send", "export"]):
+        return "share"
+
+    if any(v in name for v in ["update", "modify", "set"]):
+        return "update"
+
+    if any(v in name for v in ["register", "create", "insert"]):
+        return "collect"
+
+    return "read"
 
 # ------------------------------------------------------------
 # Evento de autorización explícita (permissionGranted)
@@ -328,7 +344,7 @@ def create_permission_event(timestamp, access_type, purpose, legal_basis):
 def enrich_real_events_with_gdpr(trace):
     consent_valid = False
     restriction_active = False
-    erased = False   # 🔴 NUEVO ESTADO CRÍTICO
+    erased = False
 
     for event in trace:
         name = event["concept:name"]
@@ -356,7 +372,6 @@ def enrich_real_events_with_gdpr(trace):
             restriction_active = False
             continue
 
-        # 🔴 BORRADO DEL DATO (estado final)
         if name in {
             GDPR_EVENTS["ERASE"],
             GDPR_EVENTS["ERASE_ALL_COPIES"]
@@ -371,31 +386,49 @@ def enrich_real_events_with_gdpr(trace):
             continue
 
         # ==========================
-        # EVENTOS REALES (ACCESO)
+        # EVENTOS REALES (TRATAMIENTO)
         # ==========================
 
-        # ❌ Dato borrado → bloqueo absoluto
+        # ⛔ BLOQUEOS ABSOLUTOS
         if erased:
             event["gdpr:blocked_reason"] = "data_erased"
             continue
 
-        # ❌ Sin consentimiento válido
         if not consent_valid:
             event["gdpr:blocked_reason"] = "missing_or_expired_consent"
             continue
 
-        # ❌ Restricción activa
         if restriction_active:
             event["gdpr:blocked_reason"] = "processing_restricted"
             continue
 
-        # ✅ Acceso permitido
-        access_type = classify_data_access(event["concept:name"])
+        # ==========================
+        # ✅ ACCESO PERMITIDO
+        # ==========================
 
-        event["gdpr:access"] = access_type
+        operation = classify_data_operation(name)
+
+        # Flag genérico de tratamiento
+        event["gdpr:access"] = True
+
+        # Semántica rica del tratamiento
+        event["gdpr:operation"] = operation
+
+        # (Opcional pero recomendable) compatibilidad legacy
+        if operation == "read":
+            event["gdpr:access_type"] = GDPR_EVENTS["READ"]
+        else:
+            event["gdpr:access_type"] = GDPR_EVENTS["WRITE"]
+
+        # Metadatos GDPR
         event["gdpr:access_mode"] = "single"
-        event["gdpr:actor"] = "Controller"
-        event["gdpr:purpose"] = "service_provision"
+        event["gdpr:actor"] = "controller"
+        event["gdpr:purpose"] = trace.attributes.get(
+            "gdpr:default_purpose", "service_provision"
+        )
+        event["gdpr:data_scope"] = "minimal"
+        event["gdpr:legal_basis"] = "consent"
+
 
 
 

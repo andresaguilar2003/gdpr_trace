@@ -17,15 +17,23 @@ def validate_data_minimization(trace):
     violations = []
 
     for e in trace:
-        if e.get("gdpr:access") and e.get("gdpr:data_scope") == "excessive":
+        if (
+            e.get("gdpr:access")
+            and e.get("gdpr:data_scope") == "excessive"
+            and e.get("gdpr:operation") in {"read", "share", "collect"}
+        ):
             violations.append({
                 "type": "data_minimization_violation",
                 "severity": "medium",
-                "message": "Acceso a más datos de los necesarios",
+                "message": (
+                    f"Operación '{e.get('gdpr:operation')}' "
+                    "con acceso excesivo a datos"
+                ),
                 "events": [e]
             })
 
     return violations
+
 
 def validate_purpose_limitation(trace):
     violations = []
@@ -33,13 +41,20 @@ def validate_purpose_limitation(trace):
 
     for e in trace:
         if e.get("gdpr:access") and e.get("gdpr:purpose") != allowed_purpose:
+            operation = e.get("gdpr:operation", "read")
+
+            severity = "critical" if operation == "share" else "high"
+
             violations.append({
                 "type": "purpose_violation",
-                "severity": "high",
-                "blocking": True,  
-                "message": "Uso de datos para un propósito no autorizado",
+                "severity": severity,
+                "blocking": True,
+                "message": (
+                    f"Operación '{operation}' con propósito no autorizado"
+                ),
                 "events": [e]
             })
+
 
     return violations
 
