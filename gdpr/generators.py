@@ -146,7 +146,7 @@ def insert_consent_expiration(trace):
 # con restricción temporal
 # ============================================================
 
-REMOVE_PROBABILITY = 1 #0.1
+REMOVE_PROBABILITY = 0.1 #0.1
 MAX_ERASE_DAYS = 7
 from random import random, randint
 from datetime import timedelta
@@ -231,7 +231,7 @@ def insert_remove_data_flow(trace):
 # FIGURA 3 – DERECHO DE RECTIFICACIÓN
 # ============================================================
 
-RECTIFY_PROBABILITY = 1   # 15% de las trazas
+RECTIFY_PROBABILITY = 0.15   # 15% de las trazas
 
 def create_rectify_event(timestamp):
     return create_gdpr_event(
@@ -259,7 +259,7 @@ def insert_rectification(trace):
 # FIGURA 3 – RESTRICCIÓN DEL TRATAMIENTO
 # ============================================================
 
-RESTRICT_PROBABILITY = 1 #0.1
+RESTRICT_PROBABILITY = 0.1 #0.1
 RESTRICTION_DAYS = 30
 
 def create_restrict_event(timestamp):
@@ -328,13 +328,15 @@ def create_permission_event(timestamp, access_type, purpose, legal_basis):
 def enrich_real_events_with_gdpr(trace):
     consent_valid = False
     restriction_active = False
+    erased = False   # 🔴 NUEVO ESTADO CRÍTICO
 
     for event in trace:
         name = event["concept:name"]
 
         # ==========================
-        # TRANSICIONES DE ESTADO
+        # TRANSICIONES DE ESTADO GDPR
         # ==========================
+
         if name == GDPR_EVENTS["PERMISSION_GRANTED"]:
             consent_valid = True
             continue
@@ -354,6 +356,14 @@ def enrich_real_events_with_gdpr(trace):
             restriction_active = False
             continue
 
+        # 🔴 BORRADO DEL DATO (estado final)
+        if name in {
+            GDPR_EVENTS["ERASE"],
+            GDPR_EVENTS["ERASE_ALL_COPIES"]
+        }:
+            erased = True
+            continue
+
         # ==========================
         # EVENTOS GDPR (no reales)
         # ==========================
@@ -361,22 +371,32 @@ def enrich_real_events_with_gdpr(trace):
             continue
 
         # ==========================
-        # EVENTOS REALES
+        # EVENTOS REALES (ACCESO)
         # ==========================
+
+        # ❌ Dato borrado → bloqueo absoluto
+        if erased:
+            event["gdpr:blocked_reason"] = "data_erased"
+            continue
+
+        # ❌ Sin consentimiento válido
         if not consent_valid:
             event["gdpr:blocked_reason"] = "missing_or_expired_consent"
             continue
 
+        # ❌ Restricción activa
         if restriction_active:
             event["gdpr:blocked_reason"] = "processing_restricted"
             continue
 
+        # ✅ Acceso permitido
         access_type = classify_data_access(event["concept:name"])
 
         event["gdpr:access"] = access_type
         event["gdpr:access_mode"] = "single"
         event["gdpr:actor"] = "Controller"
         event["gdpr:purpose"] = "service_provision"
+
 
 
 
@@ -436,7 +456,7 @@ def insert_access_logs_and_history(trace):
 # detectBreach → notifyBreach (≤ 72h)
 
 # Simular violaciones de datos
-BREACH_PROBABILITY = 1     # 5% de las trazas
+BREACH_PROBABILITY = 0.05     # 5% de las trazas
 MAX_NOTIFY_HOURS = 72
 
 # Crear eventos de violación de datos
@@ -488,7 +508,7 @@ def insert_breach_events(trace):
 # requestInfo → provideInfo (≤ 30 días)
 
 # Simular ejercicio de derechos ARCO
-RIGHTS_PROBABILITY = 1     # 20% de los casos ejercen derechos
+RIGHTS_PROBABILITY = 0.2     # 20% de los casos ejercen derechos
 MAX_RESPONSE_DAYS = 30
 from random import random, randint
 
@@ -603,7 +623,7 @@ def finalize_erasure_after_loop(trace):
 # EXTENSIÓN – TERCEROS (Third Parties)
 # ============================================================
 
-THIRD_PARTY_PROBABILITY = 1
+THIRD_PARTY_PROBABILITY = 0.3 #0.3
 REVOKE_THIRD_PARTY_PROBABILITY = 0.3
 
 THIRD_PARTIES = [

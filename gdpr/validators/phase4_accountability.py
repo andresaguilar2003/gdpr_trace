@@ -74,15 +74,6 @@ def validate_access_without_permission(trace):
                     "events": [event]
                 })
 
-            elif processing_restricted:
-                violations.append({
-                    "type": "access_during_restriction",
-                    "severity": "high",
-                    "blocking": True,
-                    "message": "Acceso a datos durante restricción de procesamiento",
-                    "events": [event]
-                })
-
     return violations
 
 

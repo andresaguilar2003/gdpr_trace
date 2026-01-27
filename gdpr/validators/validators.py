@@ -48,6 +48,7 @@ def deduplicate_sp_violations(violations):
     return filtered
 
 
+
 def validate_trace(trace):
     violations = []
     violations.extend(validate_consent_before_access(trace))
@@ -67,12 +68,5 @@ def validate_trace(trace):
     violations.extend(validate_sticky_policy(trace))
 
 
-    final_violations = []
-
-    for v in violations:
-        final_violations.append(v)
-        if v.get("blocking"):
-            break  # ⛔ violación fundamental
-
-    return final_violations
+    return violations
 
