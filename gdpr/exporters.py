@@ -72,53 +72,71 @@ def export_markdown_report(report, output_dir, filename):
 
     lines = []
 
+    meta = report["metadata"]
+    summary = report["executive_summary"]
+
     # ==================================================
-    # HEADER
+    # COVER PAGE
     # ==================================================
     lines.append("# GDPR Compliance Analysis Report\n")
-
-    meta = report["metadata"]
-    lines.append(f"**Input log:** {meta['input_log']}")
+    lines.append("---\n")
+    lines.append("### Executive Compliance Assessment\n")
+    lines.append(f"**Input system log:** {meta['input_log']}")
     lines.append(f"**Analysis date:** {meta['analysis_date']}")
     lines.append(f"**Total traces analyzed:** {meta['total_traces_analyzed']}\n")
+    lines.append("---\n")
+    lines.append("\\newpage\n")
 
     # ==================================================
     # EXECUTIVE SUMMARY
     # ==================================================
-    summary = report["executive_summary"]
+    risk_icon = {
+        "none": "🟢",
+        "low": "🟡",
+        "medium": "🟠",
+        "high": "🔴"
+    }.get(summary["overall_risk_level"], "⚪")
+
     lines.append("## 1. Executive Summary\n")
-    lines.append(f"- **Overall risk level:** **{summary['overall_risk_level'].upper()}**")
-    lines.append(f"- **Total violations detected:** {summary['total_violations']}")
-    lines.append(f"- **Critical violations:** {summary['critical_violations']}\n")
+    lines.append(
+        f"**Overall GDPR Risk Level:** {risk_icon} "
+        f"**{summary['overall_risk_level'].upper()}**\n"
+    )
+    lines.append(summary.get("executive_message", "") + "\n")
+
+    lines.append("**Key figures:**")
+    lines.append(f"- Total GDPR violations detected: **{summary['total_violations']}**")
+    lines.append(f"- Critical violations: **{summary['critical_violations']}**\n")
 
     # ==================================================
     # VIOLATIONS SUMMARY
     # ==================================================
-    lines.append("## 2. Identified GDPR Violations\n")
+    lines.append("## 2. Main GDPR Findings\n")
 
     for v in report.get("violations_summary", []):
-        lines.append(f"### {v['violation']}")
-        lines.append(f"- **Severity:** {v['severity']}")
-        lines.append(f"- **Legal reference:** {v.get('legal_reference')}")
-        lines.append(f"- **Occurrences:** {v['occurrences']}")
+        lines.append(f"### ❌ {v['violation']}")
+        lines.append(f"- Severity: **{v['severity']}**")
+        lines.append(f"- Legal reference: {v.get('legal_reference')}")
+        lines.append(f"- Occurrences: {v['occurrences']}")
 
         ex = v.get("example_event")
-        if ex:
+        if ex and ex.get("activity"):
             lines.append(
-                f"- **Example:** `{ex['activity']}` at {ex['timestamp']}"
+                f"- Example event: `{ex['activity']}` "
+                f"({ex['timestamp']})"
             )
         lines.append("")
 
     # ==================================================
     # RECOMMENDATIONS
     # ==================================================
-    lines.append("## 3. Recommendations\n")
+    lines.append("## 3. Priority Recommendations\n")
 
     for r in report.get("recommendations", []):
-        lines.append(f"### {r.get('title')}")
-        lines.append(f"- **Risk level:** {r.get('risk_level')}")
-        lines.append(f"- **Legal reference:** {r.get('legal_reference')}")
-        lines.append(f"- **Recommendation:** {r.get('recommendation')}\n")
+        lines.append(f"### ✔ {r.get('title')}")
+        lines.append(f"- Risk level: {r.get('risk_level')}")
+        lines.append(f"- Legal reference: {r.get('legal_reference')}")
+        lines.append(f"- Recommendation: {r.get('recommendation')}\n")
 
     # ==================================================
     # CONCLUSION
@@ -139,6 +157,7 @@ def export_markdown_report(report, output_dir, filename):
         f.write("\n".join(lines))
 
     return path
+
 
 
 def export_pdf_report(md_path):

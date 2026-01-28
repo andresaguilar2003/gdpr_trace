@@ -64,7 +64,21 @@ def build_gdpr_executive_report(trace_records, input_log_name):
             }
         })
 
-    overall_risk = max(risk_levels, key=lambda r: ["none","low","medium","high"].index(r))
+    overall_risk = max(
+        risk_levels,
+        key=lambda r: ["none", "low", "medium", "high"].index(r)
+    )
+
+    # 🧠 Texto ejecutivo según riesgo
+    executive_message = {
+        "none": "No significant GDPR compliance issues were detected.",
+        "low": "Minor GDPR compliance gaps were identified. Improvements are recommended.",
+        "medium": "Several GDPR compliance issues were detected. Corrective actions are advised.",
+        "high": (
+            "Critical GDPR compliance risks were identified. "
+            "Immediate corrective actions are strongly recommended."
+        )
+    }[overall_risk]
 
     return {
         "metadata": {
@@ -74,9 +88,23 @@ def build_gdpr_executive_report(trace_records, input_log_name):
         },
         "executive_summary": {
             "overall_risk_level": overall_risk,
+            "executive_message": executive_message,
             "total_violations": len(violations),
-            "critical_violations": sum(1 for v in violations if v.get("severity") == "high")
+            "critical_violations": sum(
+                1 for v in violations if v.get("severity") == "high"
+            )
         },
         "violations_summary": violations_summary,
-        "recommendations": recommendations
+        "recommendations": recommendations,
+        "conclusion": {
+            "summary": (
+                "This analysis highlights the current GDPR compliance posture "
+                "based on observed process execution logs."
+            ),
+            "recommended_next_steps": [
+                "Address critical GDPR violations immediately",
+                "Review consent and access control mechanisms",
+                "Implement continuous GDPR monitoring"
+            ]
+        }
     }

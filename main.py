@@ -214,7 +214,7 @@ json_path = export_recommendations(
 print("Informe técnico GDPR exportado:")
 print(" -", json_path)
 
-
+os.remove(json_path)
 # ============================================================
 # INFORME EJECUTIVO (MD + PDF)
 # ============================================================
@@ -233,9 +233,9 @@ md_path = export_markdown_report(
 pdf_path = export_pdf_report(md_path)
 
 print("Informe ejecutivo GDPR exportado:")
-print(" - Markdown:", md_path)
 print(" - PDF:", pdf_path)
 
+os.remove(md_path)
 
 # ----------------------------
 # GRÁFICA BEFORE vs AFTER
