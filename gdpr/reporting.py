@@ -152,7 +152,16 @@ def build_gdpr_executive_report(trace_records, input_log_name):
             )
         },
         "violations_summary": violations_summary,
-        "recommendations": list(recommendations_by_type.values()),
+        "recommendations": [
+            r for r in recommendations_by_type.values()
+            if r.get("title")
+            and r["title"].strip().lower()
+            not in {
+                "violación gdpr detectada",
+                "gdpr violation detected",
+                "generic gdpr violation"
+            }
+        ],
         "conclusion": {
             "summary": (
                 "This report provides an executive assessment of GDPR compliance "
