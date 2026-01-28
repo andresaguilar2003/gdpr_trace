@@ -29,3 +29,54 @@ def build_gdpr_analysis_report(all_recommendations, input_log_name):
             for trace in sanitized_traces
         ]
     }
+
+
+def build_gdpr_executive_report(trace_records, input_log_name):
+    from datetime import datetime
+
+    violations = []
+    recommendations = []
+    risk_levels = []
+
+    for trace in trace_records:
+        risk_levels.append(trace.get("risk_level", "none"))
+        violations.extend(trace.get("violations", []))
+        recommendations.extend(trace.get("recommendations", []))
+
+    # Agrupar violaciones
+    violations_by_type = {}
+    for v in violations:
+        v_type = v["type"]
+        violations_by_type.setdefault(v_type, []).append(v)
+
+    violations_summary = []
+    for v_type, items in violations_by_type.items():
+        first_event = items[0]["events"][0] if items[0].get("events") else None
+
+        violations_summary.append({
+            "violation": v_type,
+            "severity": items[0].get("severity"),
+            "legal_reference": items[0].get("legal_reference"),
+            "occurrences": len(items),
+            "example_event": {
+                "timestamp": first_event.get("time:timestamp") if first_event else None,
+                "activity": first_event.get("concept:name") if first_event else None
+            }
+        })
+
+    overall_risk = max(risk_levels, key=lambda r: ["none","low","medium","high"].index(r))
+
+    return {
+        "metadata": {
+            "input_log": input_log_name,
+            "analysis_date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "total_traces_analyzed": len(trace_records)
+        },
+        "executive_summary": {
+            "overall_risk_level": overall_risk,
+            "total_violations": len(violations),
+            "critical_violations": sum(1 for v in violations if v.get("severity") == "high")
+        },
+        "violations_summary": violations_summary,
+        "recommendations": recommendations
+    }

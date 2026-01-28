@@ -20,8 +20,8 @@ from gdpr.recommendations import (
 from gdpr.scoring import compute_gdpr_risk_score, classify_risk
 from gdpr.remediation import apply_recommendations
 from gdpr.sticky_policies import build_sticky_policy_from_trace
-from gdpr.exporters import export_recommendations
-from gdpr.reporting import build_gdpr_analysis_report
+from gdpr.exporters import export_recommendations, export_markdown_report, export_pdf_report
+from gdpr.reporting import build_gdpr_analysis_report, build_gdpr_executive_report
 
 
 # ============================================================
@@ -196,23 +196,45 @@ xes_exporter.apply(
 print("Logs XES exportados correctamente.")
 
 
-# ----------------------------
-# INFORME GDPR UNIFICADO
-# ----------------------------
+# ============================================================
+# INFORME TÉCNICO (JSON)
+# ============================================================
 
-analysis_report = build_gdpr_analysis_report(
+technical_report = build_gdpr_analysis_report(
     trace_evidence,
     log_filename
 )
 
-analysis_path = export_recommendations(
-    analysis_report,
+json_path = export_recommendations(
+    technical_report,
     output_subdir,
     filename=f"{base_name}_gdpr_case_analysis.json"
 )
 
-print("Informe GDPR unificado exportado en:")
-print(" -", analysis_path)
+print("Informe técnico GDPR exportado:")
+print(" -", json_path)
+
+
+# ============================================================
+# INFORME EJECUTIVO (MD + PDF)
+# ============================================================
+
+executive_report = build_gdpr_executive_report(
+    trace_evidence,
+    log_filename
+)
+
+md_path = export_markdown_report(
+    executive_report,
+    output_subdir,
+    filename=f"{base_name}_gdpr_case_analysis.md"
+)
+
+pdf_path = export_pdf_report(md_path)
+
+print("Informe ejecutivo GDPR exportado:")
+print(" - Markdown:", md_path)
+print(" - PDF:", pdf_path)
 
 
 # ----------------------------
