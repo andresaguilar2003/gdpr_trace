@@ -24,6 +24,23 @@ python -m pytest tests/compliant/test_pipeline_idempotency.py -s
 python -m pytest tests/compliant/test_access_and_accountability.py -s
 # Comprueba que los accesos a datos personales quedan correctamente reflejados mediante accountability
 
+python -m pytest tests/compliant/test_rights_flows_compliant.py -s
+# Comprueba que los flujos de ejercicio de derechos GDPR se insertan y ejecutan correctamente
+
+python -m pytest tests/compliant/test_temporal_consistency_compliant.py -s
+# Verifica la coherencia temporal global de una traza GDPR-compliant
+
+
+# =========================
+# NON-COMPLIANT
+# =========================
+
+python -m pytest tests/non_compliant/test_temporal_consistency_non_compliant.py -s
+# Detecta accesos a datos personales tras el borrado efectivo (violación GDPR)
+
+python -m pytest tests/non_compliant/test_access_without_consent.py -s
+# Detecta accesos a datos personales realizados sin consentimiento previo
+
 
 # =========================
 # IMPORT

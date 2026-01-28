@@ -156,14 +156,6 @@ for trace in log:
         }
     })
 
-# ============================================================
-# RESUMEN GLOBAL DE VIOLACIONES
-# ============================================================
-
-print("\n=== DISTRIBUCIÓN DE VIOLACIONES ===")
-for vtype, count in violation_counter.most_common():
-    print(f"{vtype}: {count}")
-
 
 # ============================================================
 # EXPORTACIÓN
@@ -211,9 +203,6 @@ json_path = export_recommendations(
     filename=f"{base_name}_gdpr_case_analysis.json"
 )
 
-print("Informe técnico GDPR exportado:")
-print(" -", json_path)
-
 os.remove(json_path)
 # ============================================================
 # INFORME EJECUTIVO (MD + PDF)
@@ -224,11 +213,20 @@ executive_report = build_gdpr_executive_report(
     log_filename
 )
 
+from gdpr.charts import generate_severity_chart
+
+chart_path = generate_severity_chart(
+    executive_report["violations_summary"],
+    output_subdir
+)
+
 md_path = export_markdown_report(
     executive_report,
     output_subdir,
-    filename=f"{base_name}_gdpr_case_analysis.md"
+    filename=f"{base_name}_gdpr_case_analysis.md",
+    severity_chart_path=chart_path
 )
+
 
 pdf_path = export_pdf_report(md_path)
 

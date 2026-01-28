@@ -34,29 +34,67 @@ def build_gdpr_analysis_report(all_recommendations, input_log_name):
 def build_gdpr_executive_report(trace_records, input_log_name):
     from datetime import datetime
 
+    VIOLATION_LABELS = {
+        "data_minimization_violation": "Data minimization violation",
+        "purpose_violation": "Purpose limitation violation",
+        "access_without_consent": "Access without valid consent",
+        "access_after_consent_expiration": "Access after consent expiration",
+        "missing_right_response": "Failure to respond to data subject rights",
+        "access_after_erasure": "Access after data erasure",
+        "implicit_consent": "Implicit consent used",
+        "missing_access_log": "Missing access logging",
+        "sp_access_after_consent_expiration": "Sticky Policy: access after consent expiration"
+    }
+
     violations = []
-    recommendations = []
     risk_levels = []
 
+    # ==================================================
+    # COLLECT DATA
+    # ==================================================
     for trace in trace_records:
         risk_levels.append(trace.get("risk_level", "none"))
         violations.extend(trace.get("violations", []))
-        recommendations.extend(trace.get("recommendations", []))
 
-    # Agrupar violaciones
+    # ==================================================
+    # GROUP VIOLATIONS BY TYPE
+    # ==================================================
     violations_by_type = {}
     for v in violations:
         v_type = v["type"]
         violations_by_type.setdefault(v_type, []).append(v)
 
     violations_summary = []
+    recommendations_by_type = {}
+
     for v_type, items in violations_by_type.items():
-        first_event = items[0]["events"][0] if items[0].get("events") else None
+        first_violation = items[0]
+        first_event = (
+            first_violation["events"][0]
+            if first_violation.get("events")
+            else None
+        )
+
+        # -------------------------
+        # VIOLATION SUMMARY
+        # -------------------------
+        priority_map = {
+            "high": "Immediate action required",
+            "medium": "Corrective action recommended",
+            "low": "Monitor and improve"
+        }
 
         violations_summary.append({
-            "violation": v_type,
-            "severity": items[0].get("severity"),
-            "legal_reference": items[0].get("legal_reference"),
+            "violation": v_type,  # ID técnico
+            "display_name": VIOLATION_LABELS.get(
+                v_type,
+                v_type.replace("_", " ").capitalize()
+            ),
+            "severity": first_violation.get("severity"),
+            "priority": priority_map.get(
+                first_violation.get("severity"), "Review required"
+            ),
+            "legal_reference": first_violation.get("legal_reference"),
             "occurrences": len(items),
             "example_event": {
                 "timestamp": first_event.get("time:timestamp") if first_event else None,
@@ -64,12 +102,28 @@ def build_gdpr_executive_report(trace_records, input_log_name):
             }
         })
 
+
+
+
+        # -------------------------
+        # ONE RECOMMENDATION PER TYPE
+        # -------------------------
+        for trace in trace_records:
+            for r in trace.get("recommendations", []):
+                if r.get("violation") == v_type:
+                    recommendations_by_type[v_type] = r
+                    break
+            if v_type in recommendations_by_type:
+                break
+
+    # ==================================================
+    # OVERALL RISK
+    # ==================================================
     overall_risk = max(
         risk_levels,
         key=lambda r: ["none", "low", "medium", "high"].index(r)
     )
 
-    # 🧠 Texto ejecutivo según riesgo
     executive_message = {
         "none": "No significant GDPR compliance issues were detected.",
         "low": "Minor GDPR compliance gaps were identified. Improvements are recommended.",
@@ -80,6 +134,9 @@ def build_gdpr_executive_report(trace_records, input_log_name):
         )
     }[overall_risk]
 
+    # ==================================================
+    # FINAL REPORT
+    # ==================================================
     return {
         "metadata": {
             "input_log": input_log_name,
@@ -95,16 +152,16 @@ def build_gdpr_executive_report(trace_records, input_log_name):
             )
         },
         "violations_summary": violations_summary,
-        "recommendations": recommendations,
+        "recommendations": list(recommendations_by_type.values()),
         "conclusion": {
             "summary": (
-                "This analysis highlights the current GDPR compliance posture "
-                "based on observed process execution logs."
+                "This report provides an executive assessment of GDPR compliance "
+                "based on the analysis of operational process execution logs."
             ),
             "recommended_next_steps": [
-                "Address critical GDPR violations immediately",
-                "Review consent and access control mechanisms",
-                "Implement continuous GDPR monitoring"
+                "Immediately address critical GDPR violations",
+                "Review consent and access governance mechanisms",
+                "Introduce continuous GDPR compliance monitoring"
             ]
         }
     }
