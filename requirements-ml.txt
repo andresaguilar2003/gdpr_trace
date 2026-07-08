@@ -1,0 +1,14 @@
+torch
+transformers
+datasets
+accelerate
+sentencepiece
+scikit-learn
+evaluate
+pm4py
+PySide6
+ollama
+superqt
+matplotlib
+seaborn
+reportlab

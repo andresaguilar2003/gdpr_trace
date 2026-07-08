@@ -1,0 +1,10 @@
+{
+  "total": 40,
+  "valid": 12,
+  "invalid": 28,
+  "splits": {
+    "train": 28,
+    "validation": 6,
+    "test": 6
+  }
+}

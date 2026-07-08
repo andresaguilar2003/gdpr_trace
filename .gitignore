@@ -1,0 +1,46 @@
+# Ignorar outputs generados
+data/output/
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+venv/
+.env/
+
+# Archivos de VS Code
+.vscode/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+*.pdf
+experiments/results/
+
+
+# Ignorar el dataset gigante de Process Mining
+*.xes
+
+# Ignorar archivos de modelos de PyTorch y pesos
+*.pt
+*.safetensors
+
+# Ignorar entornos virtuales (si tu carpeta se llama .venv, venv o env)
+.venv/
+venv/
+env/
+include/
+lib/
+Scripts/
+
+# Ignorar librerías dinámicas sueltas por si acaso
+*.dll
+*.pak
