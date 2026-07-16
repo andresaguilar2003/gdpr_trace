@@ -25,6 +25,130 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RESULTS_DIR = ROOT / "experiments" / "results"
 DEFAULT_OUTPUT_PATH = DEFAULT_RESULTS_DIR / "Executive_Experiment_Report.pdf"
 
+CONTEXT_ACCEPTABLE_KEYWORDS = {
+    "medical_treatment": [
+        "medical",
+        "health",
+        "healthcare",
+        "hospital",
+        "clinical",
+        "patient",
+        "treatment",
+        "sepsis",
+    ],
+    "contract_execution": [
+        "contract",
+        "loan",
+        "credit",
+        "application",
+        "offer",
+        "banking",
+        "financial",
+        "service_delivery",
+    ],
+    "legal_obligation": [
+        "legal_obligation",
+        "legal",
+        "obligation",
+        "compliance",
+        "required_by_law",
+        "regulation",
+    ],
+    "contract": [
+        "contract",
+        "loan",
+        "credit",
+        "application",
+        "customer",
+        "banking",
+    ],
+    "health": [
+        "health",
+        "medical",
+        "clinical",
+        "hospital",
+        "patient",
+        "special_categories",
+        "special_category",
+        "sepsis",
+    ],
+    "standard": [
+        "standard",
+        "personal",
+        "customer",
+        "applicant",
+        "financial",
+        "banking",
+    ],
+    "patient": [
+        "patient",
+        "data_subject",
+        "individual",
+        "person",
+    ],
+    "customer": [
+        "customer",
+        "client",
+        "applicant",
+        "borrower",
+        "data_subject",
+    ],
+    "legal_requirement": [
+        "legal_requirement",
+        "required_by_law",
+        "regulation",
+        "compliance",
+        "healthcare",
+        "medical",
+    ],
+    "indefinite": [
+        "indefinite",
+        "necessary",
+        "as_long_as_necessary",
+        "retained",
+        "business_need",
+    ],
+    "healthcare": [
+        "healthcare",
+        "health",
+        "medical",
+        "hospital",
+        "clinical",
+        "patient",
+        "sepsis",
+    ],
+    "banking": [
+        "banking",
+        "bank",
+        "financial",
+        "finance",
+        "loan",
+        "credit",
+        "lending",
+    ],
+    "false": [
+        "false",
+        "no",
+        "none",
+        "not_applicable",
+        "not_needed",
+    ],
+    "none": [
+        "none",
+        "no",
+        "not_applicable",
+        "not_needed",
+        "no_transfer",
+        "no_safeguard",
+    ],
+    "not_needed": [
+        "not_needed",
+        "not_required",
+        "none",
+        "no",
+    ],
+}
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -61,6 +185,48 @@ def metric_value(row, key):
         return f"{float(row.get(key, 0.0)):.3f}"
     except (TypeError, ValueError):
         return "n/a"
+
+
+def normalize_token(value):
+    return str(value or "").strip().lower().replace(" ", "_")
+
+
+def acceptable_context_values(expected_value, row=None):
+    row = row or {}
+    explicit_values = row.get("acceptable_values")
+
+    if explicit_values:
+        return explicit_values
+
+    expected = normalize_token(expected_value)
+    keywords = CONTEXT_ACCEPTABLE_KEYWORDS.get(expected, [])
+    values = [expected] + [
+        keyword
+        for keyword in keywords
+        if keyword != expected
+    ]
+
+    return " | ".join(values)
+
+
+def format_context_ground_truth(expected_value, row=None, max_keywords=5):
+    accepted = acceptable_context_values(expected_value, row)
+    accepted_values = [
+        value.strip()
+        for value in accepted.split("|")
+        if value.strip()
+    ]
+
+    if not accepted_values:
+        return str(expected_value)
+
+    canonical = accepted_values[0]
+    alternatives = accepted_values[1:max_keywords + 1]
+
+    if not alternatives:
+        return canonical
+
+    return f"{canonical} (valid: {', '.join(alternatives)})"
 
 
 def build_styles():
@@ -304,25 +470,51 @@ def append_classification_reports(story, results_dir, styles, task_prefix, title
         story.append(Preformatted(read_text(report_path), styles["CodeBlock"]))
 
 
-def build_prediction_comparison_rows(csv_path, item_column, max_rows=24):
+def build_prediction_comparison_rows(
+    csv_path,
+    item_column,
+    max_rows=24,
+    truth_column="y_true",
+    prediction_column="y_pred",
+    truth_formatter=None,
+):
     rows = load_csv(csv_path)
     grouped = {}
 
     for row in rows:
+        truth_value = row.get(truth_column, row.get("y_true", ""))
+        truth_display = (
+            truth_formatter(truth_value, row)
+            if truth_formatter
+            else truth_value
+        )
         key = (
             row.get("dataset", ""),
             row.get(item_column, ""),
-            row.get("y_true", ""),
+            truth_display,
         )
         grouped.setdefault(key, {})
-        grouped[key][row.get("model", "")] = row.get("y_pred", "")
+        grouped[key][row.get("model", "")] = {
+            "display": row.get(prediction_column, row.get("y_pred", "")),
+            "impact": row.get("y_pred", ""),
+        }
 
     comparison_rows = []
 
     for (dataset, item, y_true), predictions in grouped.items():
-        phi3 = predictions.get("phi3", "n/a")
-        roberta = predictions.get("roberta", "n/a")
-        has_disagreement = phi3 != roberta or phi3 != y_true or roberta != y_true
+        phi3_data = predictions.get("phi3", {})
+        roberta_data = predictions.get("roberta", {})
+        phi3 = phi3_data.get("display", "n/a")
+        roberta = roberta_data.get("display", "n/a")
+        phi3_impact = phi3_data.get("impact", "")
+        roberta_impact = roberta_data.get("impact", "")
+        has_disagreement = (
+            phi3 != roberta
+            or phi3 != y_true
+            or roberta != y_true
+            or phi3_impact not in {"", "0_COMPLIANT"}
+            or roberta_impact not in {"", "0_COMPLIANT"}
+        )
 
         comparison_rows.append({
             "dataset": dataset,
@@ -431,7 +623,9 @@ def generate_pdf_report(results_dir=DEFAULT_RESULTS_DIR, output_path=DEFAULT_OUT
     story.append(Paragraph(
         "This section evaluates how each model fills the GDPR Context attributes such as "
         "purpose, legal basis, data category, data subject type, processing domain and "
-        "transfer-related metadata.",
+        "transfer-related metadata. Context outputs are evaluated with flexible keyword "
+        "matching and collapsed into regulatory impact classes: 0_COMPLIANT, "
+        "1_VIOLATION and 2_WARNING.",
         styles["Body"],
     ))
     story.append(image_flowable(
@@ -448,6 +642,13 @@ def generate_pdf_report(results_dir=DEFAULT_RESULTS_DIR, output_path=DEFAULT_OUT
         max_image_height=7.2 * cm,
     ))
     story.append(Spacer(1, 0.2 * cm))
+    append_classification_reports(
+        story,
+        results_dir,
+        styles,
+        task_prefix="context",
+        title="Detailed context impact classification reports",
+    )
 
     story.append(PageBreak())
 
@@ -494,13 +695,16 @@ def generate_pdf_report(results_dir=DEFAULT_RESULTS_DIR, output_path=DEFAULT_OUT
     context_prediction_rows = build_prediction_comparison_rows(
         results_dir / "context_predictions.csv",
         item_column="field",
+        truth_column="expected_value",
+        prediction_column="predicted_value",
+        truth_formatter=format_context_ground_truth,
         max_rows=24,
     )
     story.append(Paragraph("Context predictions sample", styles["Small"]))
     story.append(make_compact_table(
         context_prediction_rows,
         ["Dataset", "Field", "Ground Truth", "Phi-3", "RoBERTa"],
-        widths=[2.0 * cm, 3.2 * cm, 4.2 * cm, 3.7 * cm, 3.7 * cm],
+        widths=[1.8 * cm, 2.8 * cm, 5.2 * cm, 3.5 * cm, 3.5 * cm],
     ))
 
     story.append(Spacer(1, 0.35 * cm))

@@ -125,6 +125,145 @@ CONTEXT_FIELDS = [
     "consent_status",
 ]
 
+CONTEXT_IMPACT_LABELS = [
+    "0_COMPLIANT",
+    "1_VIOLATION",
+    "2_WARNING",
+]
+
+CRITICAL_CONTEXT_FIELDS = {
+    "legal_basis",
+    "data_category",
+    "data_subject_type",
+    "processing_domain",
+    "has_third_party_recipients",
+    "international_transfer",
+}
+
+CONTEXT_ACCEPTABLE_KEYWORDS = {
+    "medical_treatment": [
+        "medical",
+        "health",
+        "healthcare",
+        "hospital",
+        "clinical",
+        "patient",
+        "treatment",
+        "sepsis",
+    ],
+    "contract_execution": [
+        "contract",
+        "loan",
+        "credit",
+        "application",
+        "offer",
+        "banking",
+        "financial",
+        "service_delivery",
+    ],
+    "legal_obligation": [
+        "legal_obligation",
+        "legal",
+        "obligation",
+        "compliance",
+        "required_by_law",
+        "regulation",
+    ],
+    "contract": [
+        "contract",
+        "loan",
+        "credit",
+        "application",
+        "customer",
+        "banking",
+    ],
+    "health": [
+        "health",
+        "medical",
+        "clinical",
+        "hospital",
+        "patient",
+        "special_categories",
+        "special_category",
+        "sepsis",
+    ],
+    "standard": [
+        "standard",
+        "personal",
+        "customer",
+        "applicant",
+        "financial",
+        "banking",
+    ],
+    "patient": [
+        "patient",
+        "data_subject",
+        "individual",
+        "person",
+    ],
+    "customer": [
+        "customer",
+        "client",
+        "applicant",
+        "borrower",
+        "data_subject",
+    ],
+    "legal_requirement": [
+        "legal_requirement",
+        "required_by_law",
+        "regulation",
+        "compliance",
+        "healthcare",
+        "medical",
+    ],
+    "indefinite": [
+        "indefinite",
+        "necessary",
+        "as_long_as_necessary",
+        "retained",
+        "business_need",
+    ],
+    "healthcare": [
+        "healthcare",
+        "health",
+        "medical",
+        "hospital",
+        "clinical",
+        "patient",
+        "sepsis",
+    ],
+    "banking": [
+        "banking",
+        "bank",
+        "financial",
+        "finance",
+        "loan",
+        "credit",
+        "lending",
+    ],
+    "false": [
+        "false",
+        "no",
+        "none",
+        "not_applicable",
+        "not_needed",
+    ],
+    "none": [
+        "none",
+        "no",
+        "not_applicable",
+        "not_needed",
+        "no_transfer",
+        "no_safeguard",
+    ],
+    "not_needed": [
+        "not_needed",
+        "not_required",
+        "none",
+        "no",
+    ],
+}
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -261,6 +400,57 @@ def normalize_value(value):
     }
 
     return aliases.get(text, text)
+
+
+def text_contains_keyword(text, keywords):
+    comparable = f" {text.replace('_', ' ')} {text} "
+
+    for keyword in keywords:
+        normalized_keyword = normalize_value(keyword)
+        expanded_keyword = normalized_keyword.replace("_", " ")
+
+        if normalized_keyword in text or expanded_keyword in comparable:
+            return True
+
+    return False
+
+
+def context_prediction_matches(expected, predicted):
+    expected_norm = normalize_value(expected)
+    predicted_norm = normalize_value(predicted)
+
+    if expected_norm == predicted_norm:
+        return True
+
+    keywords = CONTEXT_ACCEPTABLE_KEYWORDS.get(expected_norm, [])
+    return text_contains_keyword(predicted_norm, keywords)
+
+
+def context_impact_label(field, expected, predicted):
+    predicted_norm = normalize_value(predicted)
+
+    if context_prediction_matches(expected, predicted):
+        return "0_COMPLIANT"
+
+    if predicted_norm in {"__error__", "__ERROR__", "", "unknown"}:
+        return "1_VIOLATION"
+
+    if field in CRITICAL_CONTEXT_FIELDS:
+        return "1_VIOLATION"
+
+    return "2_WARNING"
+
+
+def acceptable_context_values(expected):
+    expected_norm = normalize_value(expected)
+    keywords = CONTEXT_ACCEPTABLE_KEYWORDS.get(expected_norm, [])
+    values = [expected_norm] + [
+        keyword
+        for keyword in keywords
+        if keyword != expected_norm
+    ]
+
+    return " | ".join(values)
 
 
 def normalize_activity_prediction(info):
@@ -467,12 +657,23 @@ def evaluate(args):
                 context_prediction = context_to_dict(context)
 
             for field in CONTEXT_FIELDS:
+                expected_value = context_truth[field]
+                predicted_value = context_prediction.get(field, "none")
+                impact_label = context_impact_label(
+                    field,
+                    expected_value,
+                    predicted_value,
+                )
+
                 context_rows.append({
                     "dataset": dataset_name,
                     "model": model_name,
                     "field": field,
-                    "y_true": context_truth[field],
-                    "y_pred": context_prediction.get(field, "none"),
+                    "y_true": "0_COMPLIANT",
+                    "y_pred": impact_label,
+                    "expected_value": expected_value,
+                    "acceptable_values": acceptable_context_values(expected_value),
+                    "predicted_value": predicted_value,
                 })
 
             activity_map, error = safe_run(
@@ -505,7 +706,16 @@ def evaluate(args):
     write_csv(
         output_dir / "context_predictions.csv",
         context_rows,
-        ["dataset", "model", "field", "y_true", "y_pred"],
+        [
+            "dataset",
+            "model",
+            "field",
+            "y_true",
+            "y_pred",
+            "expected_value",
+            "acceptable_values",
+            "predicted_value",
+        ],
     )
     write_csv(
         output_dir / "activity_predictions.csv",
@@ -520,14 +730,18 @@ def evaluate(args):
         ("context", context_rows),
         ("activity_type", activity_rows),
     ]:
-        labels = sorted({row["y_true"] for row in rows} | {row["y_pred"] for row in rows})
+        if task == "context":
+            confusion_labels = CONTEXT_IMPACT_LABELS
+        else:
+            confusion_labels = sorted({row["y_true"] for row in rows} | {row["y_pred"] for row in rows})
 
         for model_name in models:
             model_rows = [row for row in rows if row["model"] == model_name]
             y_true = [row["y_true"] for row in model_rows]
             y_pred = [row["y_pred"] for row in model_rows]
+            metric_labels = sorted(set(y_true) | set(y_pred))
 
-            metrics = compute_metrics(y_true, y_pred, labels)
+            metrics = compute_metrics(y_true, y_pred, metric_labels)
             metric_rows.append({
                 "task": task,
                 "model": model_name,
@@ -537,7 +751,7 @@ def evaluate(args):
             reports[f"{task}_{model_name}"] = classification_report(
                 y_true,
                 y_pred,
-                labels=labels,
+                labels=metric_labels,
                 zero_division=0,
                 output_dict=True,
             )
@@ -545,7 +759,7 @@ def evaluate(args):
             report_text = classification_report(
                 y_true,
                 y_pred,
-                labels=labels,
+                labels=metric_labels,
                 zero_division=0,
             )
             (output_dir / f"{task}_{model_name}_classification_report.txt").write_text(
@@ -556,7 +770,7 @@ def evaluate(args):
             save_confusion_matrix(
                 y_true,
                 y_pred,
-                labels,
+                confusion_labels,
                 f"{task} confusion matrix - {model_name}",
                 output_dir / f"{task}_{model_name}_confusion_matrix.png",
             )

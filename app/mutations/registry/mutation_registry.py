@@ -75,6 +75,23 @@ MUTATION_REGISTRY = {
         "factory": lambda: ReplaceEventMutation("encryption_applied", "retention_period_verify")
     },
 
+    "replace_consent_with_privacy_notice": {
+        "category": MutationCategory.STRUCTURAL,
+        "factory": lambda: ReplaceEventMutation("check_consent", "privacy_notice_disclosed")
+    },
+    
+    # M4.2: Reemplazar eliminación definitiva por marca de restricción temporal en derecho de supresión
+    "replace_erase_primary_record_with_mark_restricted": {
+        "category": MutationCategory.STRUCTURAL,
+        "factory": lambda: ReplaceEventMutation("erase_primary_record", "mark_data_as_restricted")
+    },
+    
+    # M4.3: Duplicar el control de acceso de seguridad para evaluar redundancias y tolerancia a ruido
+    "duplicate_access_control_check": {
+        "category": MutationCategory.STRUCTURAL,
+        "factory": lambda: DuplicateEventMutation("access_control_check")
+    },
+
 
     # ======================================================
     # TEMPORAL (Nivel 2)
@@ -101,6 +118,18 @@ MUTATION_REGISTRY = {
     "swap_identity_verification_and_response": {
         "category": MutationCategory.TEMPORAL,
         "factory": lambda: SwapEventOrderMutation("verify_request_identity", "respond_user_right")
+    },
+
+    # M4.4: Enviar datos antes de verificar que existe un contrato/acuerdo firmado con el tercero
+    "swap_third_party_agreement_and_transfer": {
+        "category": MutationCategory.TEMPORAL,
+        "factory": lambda: SwapEventOrderMutation("check_third_party_agreement", "DATA_TRANSFER")
+    },
+    
+    # M4.5: Procesar y registrar la actividad antes de aplicar el chequeo de minimización de datos
+    "swap_minimisation_check_and_processing": {
+        "category": MutationCategory.TEMPORAL,
+        "factory": lambda: SwapEventOrderMutation("minimisation_check", "log_processing_activity")
     },
 
 
