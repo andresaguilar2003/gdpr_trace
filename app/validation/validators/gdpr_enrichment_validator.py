@@ -555,6 +555,19 @@ class GDPREnrichmentValidator:
         ctx = trace.context
         data_category = ctx.data_category
 
+        access_control_events = [
+            e for e in trace.events
+            if isinstance(e, GDPREvent) and e.name == "access_control_check"
+        ]
+        
+        if len(access_control_events) > 1:
+            violations.append({
+                "rule": "DATA_ACCESS_CONTROL_DUPLICATED",
+                "event": "trace",
+                "message": f"access_control_check appears {len(access_control_events)} times",
+                "recommendation": "Ensure the system logs 'access_control_check' exactly once. Multiple security check events suggest trace duplication or logging errors."
+            })
+
         for event in trace.events:
 
             if isinstance(event, GDPREvent):
