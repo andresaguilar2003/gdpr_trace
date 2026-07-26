@@ -53,21 +53,34 @@ class _AIValidatorAdapter:
         result["validation_mode"] = "ai"
         result["rule_evaluated"] = rule_label
 
-        if result.get("impact") == "1_VIOLATION" and deterministic_violations:
-            result["violations"] = list(deterministic_violations)
+        impact = result.get("impact")
 
-        if result.get("impact") == "2_WARNING" and deterministic_warnings:
-            result["warnings"] = list(deterministic_warnings)
+        if impact == "0_COMPLIANT":
+            result["violations"] = []
+            result["warnings"] = []
+        elif impact == "1_VIOLATION":
+            result["violations"] = list(deterministic_violations) or result.get("violations", [])
+            result["warnings"] = []
+        elif impact == "2_WARNING":
+            result["violations"] = []
+            result["warnings"] = list(deterministic_warnings) or result.get("warnings", [])
+            if not result["warnings"]:
+                result["warnings"] = [{
+                    "rule": rule_label,
+                    "event": "trace",
+                    "message": "T5 DSL classified this trace as a GDPR warning.",
+                    "recommendation": "Review the trace for unnecessary or contextually excessive GDPR control events."
+                }]
 
         result["violations"] = self._complete_issues(
             result.get("violations", []),
             issue_type="violation",
-            deterministic_issues=deterministic_violations
+            deterministic_issues=deterministic_violations if impact != "2_WARNING" else []
         )
         result["warnings"] = self._complete_issues(
             result.get("warnings", []),
             issue_type="warning",
-            deterministic_issues=deterministic_warnings
+            deterministic_issues=deterministic_warnings if impact != "1_VIOLATION" else []
         )
         result["deterministic_reference"] = deterministic_result
 
@@ -532,6 +545,36 @@ class LogController:
             })
 
         return rows
+
+    def get_last_enrichment_context_summary(self):
+        context = getattr(self, "_last_context", None)
+
+        if context is None:
+            return "No hay contexto inferido disponible."
+
+        def clean(value):
+            if value is None:
+                return "no especificado"
+            if hasattr(value, "name"):
+                return value.name.replace("_", " ").title()
+            text = str(value).replace("_", " ")
+            return text.title() if text.isupper() or "_" in str(value) else text
+
+        domain = clean(context.processing_domain)
+        purpose = clean(context.purpose)
+        legal_basis = clean(context.legal_basis)
+        data_category = clean(context.data_category)
+        subject_type = clean(context.data_subject_type)
+        operation = clean(context.processing_operation)
+        transfer = clean(context.international_transfer)
+
+        return (
+            f"El proceso analizado pertenece al dominio de {domain} con el "
+            f"propósito de {purpose}. La base legal identificada es {legal_basis} "
+            f"y trata categorías de datos relativas a {data_category} de sujetos "
+            f"de tipo {subject_type}. La operación principal inferida es {operation} "
+            f"y el escenario de transferencia internacional se ha clasificado como {transfer}."
+        )
     
     def get_current_graph(self):
         return self._current_graph

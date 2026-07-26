@@ -5,15 +5,17 @@ from app.services.ai.t5.training.dataset_example import (
 from app.services.ai.t5.serializers.ai_trace_serializer import (
     AITraceSerializer
 )
+from app.services.ai.t5.prompts.gdpr_validation_prompt import (
+    GDPRValidationPromptBuilder
+)
 
 
 class DatasetGenerator:
 
     @staticmethod
     def build_input_text(trace):
-        return (
-            "validate gdpr enrichment: "
-            + AITraceSerializer.serialize(trace)
+        return GDPRValidationPromptBuilder.build(
+            AITraceSerializer.serialize(trace)
         )
 
     @staticmethod

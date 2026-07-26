@@ -273,7 +273,8 @@ class MainWindow(QMainWindow):
 
             self.enrichment_view.set_gdpr_graph(graph)
             self.enrichment_view.update_activity_typing(
-                self.controller.get_last_activity_typing()
+                self.controller.get_last_activity_typing(),
+                self.controller.get_last_enrichment_context_summary()
             )
             self.enrichment_view.export_button.setEnabled(True)
             

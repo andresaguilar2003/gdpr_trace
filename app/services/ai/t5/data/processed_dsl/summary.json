@@ -1,16 +1,16 @@
 {
-  "total": 82,
+  "total": 232,
   "splits": {
-    "train": 63,
+    "train": 213,
     "validation": 9,
     "test": 10
   },
   "impact_distribution": {
-    "0": 24,
-    "1": 29,
-    "2": 29
+    "0": 74,
+    "1": 79,
+    "2": 79
   },
-  "rule_count": 21,
+  "rule_count": 23,
   "rules": [
     "AUTOMATED_DECISION_DISCLOSURE_REQUIRED",
     "CASE_END_ERASURE",
@@ -19,11 +19,13 @@
     "COMPLIANT",
     "DATA_ACCESS_CONTROL_FORBIDDEN",
     "DATA_ACCESS_CONTROL_REQUIRED",
+    "DATA_COLLECTION_CONSENT_FORBIDDEN",
     "DATA_COLLECTION_CONSENT_REQUIRED",
     "DATA_COLLECTION_LEGAL_BASIS_FLOW",
     "DATA_COLLECTION_NOTICE",
     "DATA_DELETION_ERASE_REQUIRED",
     "DATA_DELETION_RETENTION_REQUIRED",
+    "DATA_PROCESSING_ENCRYPTION_FORBIDDEN",
     "DATA_PROCESSING_ENCRYPTION_REQUIRED",
     "DATA_PROCESSING_LOG_REQUIRED",
     "DATA_PROCESSING_MINIMISATION",

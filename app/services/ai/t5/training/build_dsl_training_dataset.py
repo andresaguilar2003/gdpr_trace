@@ -21,6 +21,57 @@ SPLITS = ["train", "validation", "test"]
 IMPACT_TARGETS = ["0", "1", "2"]
 
 
+SYNTHETIC_WARNING_TEMPLATES = [
+    {
+        "rule_evaluated": "DATA_COLLECTION_CONSENT_FORBIDDEN",
+        "input_text": (
+            "validate gdpr impact: rule: DATA_COLLECTION | "
+            "context: legal_basis:contract; data_category:DataCategory.STANDARD; "
+            "retention:none; third_party:false; international:none; safeguard:none; consent:not_needed | "
+            "trace: CASE_START -> verify_legal_basis[AFTER] -> check_consent[BEFORE] -> "
+            "DATA_COLLECTION -> privacy_notice_disclosed[AFTER] | return only 0, 1 or 2"
+        ),
+    },
+    {
+        "rule_evaluated": "DATA_PROCESSING_ENCRYPTION_FORBIDDEN",
+        "input_text": (
+            "validate gdpr impact: rule: DATA_PROCESSING | "
+            "context: legal_basis:contract; data_category:DataCategory.STANDARD; "
+            "retention:none; third_party:false; international:none; safeguard:none; consent:not_needed | "
+            "trace: minimisation_check[BEFORE] -> encryption_applied[BEFORE] -> "
+            "DATA_PROCESSING -> log_processing_activity[AFTER] | return only 0, 1 or 2"
+        ),
+    },
+    {
+        "rule_evaluated": "DATA_ACCESS_CONTROL_FORBIDDEN",
+        "input_text": (
+            "validate gdpr impact: rule: DATA_ACCESS | "
+            "context: legal_basis:none; data_category:DataCategory.STANDARD; "
+            "retention:none; third_party:false; international:none; safeguard:none; consent:not_needed | "
+            "trace: access_control_check[BEFORE] -> DATA_ACCESS | return only 0, 1 or 2"
+        ),
+    },
+    {
+        "rule_evaluated": "DATA_TRANSFER_THIRD_PARTY_FORBIDDEN",
+        "input_text": (
+            "validate gdpr impact: rule: DATA_TRANSFER | "
+            "context: legal_basis:none; data_category:none; retention:none; third_party:false; "
+            "international:none; safeguard:none; consent:not_needed | "
+            "trace: check_third_party_agreement[BEFORE] -> DATA_TRANSFER | return only 0, 1 or 2"
+        ),
+    },
+    {
+        "rule_evaluated": "DATA_TRANSFER_INTERNATIONAL_FORBIDDEN",
+        "input_text": (
+            "validate gdpr impact: rule: DATA_TRANSFER | "
+            "context: legal_basis:none; data_category:none; retention:none; third_party:false; "
+            "international:eu; safeguard:none; consent:not_needed | "
+            "trace: verify_international_safeguard[BEFORE] -> DATA_TRANSFER | return only 0, 1 or 2"
+        ),
+    },
+]
+
+
 def load_jsonl(path):
     rows = []
 
@@ -164,6 +215,34 @@ def balance_by_target(rows, seed):
     return balanced
 
 
+def synthetic_warning_records(count_per_template, split_name, seed):
+    rng = random.Random(seed)
+    records = []
+
+    for template in SYNTHETIC_WARNING_TEMPLATES:
+        for index in range(count_per_template):
+            prompt = template["input_text"]
+
+            if index % 3 == 1:
+                prompt = prompt.replace("trace:", "trace: audit_marker[BEFORE] ->", 1)
+            elif index % 3 == 2:
+                prompt = prompt.replace("consent:not_needed", "consent:not_required")
+
+            records.append({
+                "source_file": f"synthetic_warning/{template['rule_evaluated']}",
+                "trace_id": f"synthetic_warning_{split_name}_{template['rule_evaluated']}_{index}",
+                "rule_evaluated": template["rule_evaluated"],
+                "input_text": prompt,
+                "target_text": "2",
+                "impact_label": "2_WARNING",
+                "sampling_strategy": "synthetic_warning_oversampling",
+                "synthetic_id": f"warning_{template['rule_evaluated']}_{index}",
+            })
+
+    rng.shuffle(records)
+    return records
+
+
 def summarize(splits):
     all_rows = [
         row
@@ -204,6 +283,12 @@ def main():
         action="store_true",
         help="Keep the natural distribution instead of balancing each split.",
     )
+    parser.add_argument(
+        "--synthetic-warnings-per-rule",
+        type=int,
+        default=10,
+        help="Extra DSL warning examples per warning rule for the train split.",
+    )
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
@@ -220,6 +305,13 @@ def main():
             build_dsl_record(record)
             for record in load_jsonl(source_path)
         ]
+
+        if split_name == "train" and args.synthetic_warnings_per_rule > 0:
+            rows.extend(synthetic_warning_records(
+                args.synthetic_warnings_per_rule,
+                split_name=split_name,
+                seed=args.seed,
+            ))
 
         if not args.no_balance:
             rows = balance_by_target(rows, seed=args.seed)

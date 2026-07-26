@@ -522,7 +522,7 @@ class MutationView(QWidget):
         filters_layout.setSpacing(8)
         
         self.severity_filter = QComboBox()
-        self.severity_filter.addItems(["ALL", "VIOLATION", "WARNING", "OK"])
+        self.severity_filter.addItems(["ALL", "VIOLATION", "WARNING", "COMPLIANT"])
         self.severity_filter.currentTextChanged.connect(self._populate_table)
         
         self.mutation_filter = QComboBox()
@@ -542,11 +542,12 @@ class MutationView(QWidget):
         
         # Tabla Principal del Reporte
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
+        self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels([
             "Trace Target ID",
             "Applied Mutation Engine",
             "Validator",
+            "AI Impact",
             "Audit Status",
             "Violations",
             "Warnings",
@@ -572,7 +573,8 @@ class MutationView(QWidget):
 
         filtered = []
         for r in self.current_report.trace_reports:
-            if severity_filter != "ALL" and r.severity != severity_filter:
+            report_severity = self._display_severity(r.severity)
+            if severity_filter != "ALL" and report_severity != severity_filter:
                 continue
             if mutation_filter != "ALL" and r.mutation_name != mutation_filter:
                 continue
@@ -586,6 +588,9 @@ class MutationView(QWidget):
             w_count = len(r.validator_result.get("warnings", []))
             validation_mode = r.validator_result.get("validation_mode", "deterministic")
             agreement = r.validator_result.get("agrees_with_ai")
+            impact_text = self._impact_text(r.validator_result)
+            impact_color = self._impact_color(impact_text)
+            display_severity = self._display_severity(r.severity)
 
             # Trace ID
             item_id = QTableWidgetItem(str(r.trace_id))
@@ -596,12 +601,17 @@ class MutationView(QWidget):
 
             item_mode = QTableWidgetItem(validation_mode.upper())
             item_mode.setTextAlignment(Qt.AlignCenter)
+
+            item_impact = QTableWidgetItem(impact_text)
+            item_impact.setTextAlignment(Qt.AlignCenter)
+            item_impact.setForeground(impact_color)
             
             # Status Badge
             item_sev = QTableWidgetItem(f" ● {r.severity}")
-            if r.severity == "VIOLATION":
+            item_sev.setText(f" ● {display_severity}")
+            if display_severity == "VIOLATION":
                 item_sev.setForeground(Qt.GlobalColor.red)
-            elif r.severity == "WARNING":
+            elif display_severity == "WARNING":
                 item_sev.setForeground(Qt.GlobalColor.yellow)
             else:
                 item_sev.setForeground(Qt.GlobalColor.green)
@@ -636,12 +646,39 @@ class MutationView(QWidget):
             self.table.setItem(row, 0, item_id)
             self.table.setItem(row, 1, item_mut)
             self.table.setItem(row, 2, item_mode)
-            self.table.setItem(row, 3, item_sev)
-            self.table.setItem(row, 4, item_v)
-            self.table.setItem(row, 5, item_w)
-            self.table.setItem(row, 6, item_agreement)
+            self.table.setItem(row, 3, item_impact)
+            self.table.setItem(row, 4, item_sev)
+            self.table.setItem(row, 5, item_v)
+            self.table.setItem(row, 6, item_w)
+            self.table.setItem(row, 7, item_agreement)
 
         self.table.resizeColumnsToContents()
+
+    @staticmethod
+    def _display_severity(severity):
+        return "COMPLIANT" if severity == "OK" else severity
+
+    @staticmethod
+    def _impact_text(validator_result):
+        impact = validator_result.get("impact")
+
+        if not impact and validator_result.get("ai_result"):
+            impact = validator_result["ai_result"].get("impact")
+
+        return impact or "-"
+
+    @staticmethod
+    def _impact_color(impact):
+        if impact == "0_COMPLIANT":
+            return Qt.GlobalColor.green
+
+        if impact == "1_VIOLATION":
+            return Qt.GlobalColor.red
+
+        if impact == "2_WARNING":
+            return Qt.GlobalColor.yellow
+
+        return Qt.GlobalColor.gray
 
     def _open_trace_detail(self, row, column):
         report = self.filtered_reports[row]

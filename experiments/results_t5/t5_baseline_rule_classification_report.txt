@@ -1,38 +1,37 @@
-                                                                                                                                      precision    recall  f1-score   support
+                                                                                                         precision    recall  f1-score   support
 
-"context_not_needed", "consent_basis_facilities_france_france_france_france_france_france_france_france_france_france_france_france_       0.00      0.00      0.00         0
-                                                                                           "context_not_needed", "context_not_needed       0.00      0.00      0.00         0
-                                                                                                            ACCESS_REQUIRED_REQUIRED       0.00      0.00      0.00         0
-                                                                                              AUTOMATED_DECISION_DISCLOSURE_REQUIRED       0.00      0.00      0.00         1
-                                                                                                         AUTOMATED_DECISION_REQUIRED       0.00      0.00      0.00         0
-                                                                                                                    CASE_END_ERASURE       0.00      0.00      0.00         1
-                                                                                                  CASE_END_MISSING_RETENTION_CONTEXT       0.00      0.00      0.00         1
-                                                                                                                   CASE_END_REQUIRED       0.00      0.00      0.00         0
-                                                                                                       CASE_START_VERIFY_LEGAL_BASIS       0.25      1.00      0.40         1
-                                                                                                                           COMPLIANT       0.00      0.00      0.00        28
-                                                                                                       DATA_ACCESS_CONTROL_FORBIDDEN       0.00      0.00      0.00         9
-                                                                                                        DATA_ACCESS_CONTROL_REQUIRED       0.08      1.00      0.14         1
-                                                                                                    DATA_COLLECTION_CONSENT_REQUIRED       0.00      0.00      0.00         1
-                                                                                                    DATA_COLLECTION_LEGAL_BASIS_FLOW       0.00      0.00      0.00         4
-                                                                                                              DATA_COLLECTION_NOTICE       0.00      0.00      0.00         4
-                                                                                                            DATA_COLLECTION_REQUIRED       0.00      0.00      0.00         0
-                                                                                                        DATA_DELETION_ERASE_REQUIRED       0.00      0.00      0.00         1
-                                                                                                              DATA_DELETION_REQUIRED       0.00      0.00      0.00         0
-                                                                                                    DATA_DELETION_RETENTION_REQUIRED       0.00      0.00      0.00         1
-                                                                                                 DATA_PROCESSING_ENCRYPTION_REQUIRED       0.00      0.00      0.00         1
-                                                                                                        DATA_PROCESSING_LOG_REQUIRED       0.00      0.00      0.00         4
-                                                                                                        DATA_PROCESSING_MINIMISATION       0.00      0.00      0.00         2
-                                                                                                            DATA_PROCESSING_REQUIRED       0.00      0.00      0.00         0
-                                                                                               DATA_TRANSFER_INTERNATIONAL_FORBIDDEN       0.00      0.00      0.00         9
-                                                                                                DATA_TRANSFER_INTERNATIONAL_REQUIRED       0.00      0.00      0.00         1
-                                                                                                              DATA_TRANSFER_REQUIRED       0.00      0.00      0.00         0
-                                                                                                 DATA_TRANSFER_THIRD_PARTY_FORBIDDEN       0.00      0.00      0.00        10
-                                                                                                  DATA_TRANSFER_THIRD_PARTY_REQUIRED       0.00      0.00      0.00         1
-                                                                                                           ERASURE_REQUIRED_REQUIRED       0.00      0.00      0.00         0
-                                                                                                        USER_RIGHT_ACCESS_COMPLIANCE       0.00      0.00      0.00         1
-                                                                                                         USER_RIGHT_REQUEST_REQUIRED       0.00      0.00      0.00         0
-                                                                                                USER_RIGHT_REQUEST_RESPONSE_REQUIRED       0.00      0.00      0.00         2
+                                                                 AUTOMATED_DECISION_DISCLOSURE_REQUIRED       0.00      0.00      0.00         1
+                                                                            AUTOMATED_DECISION_REQUIRED       0.00      0.00      0.00         0
+                                                                                       CASE_END_ERASURE       0.00      0.00      0.00         1
+                                                                     CASE_END_MISSING_RETENTION_CONTEXT       0.00      0.00      0.00         1
+                                                                                      CASE_END_REQUIRED       0.00      0.00      0.00         0
+                                                                          CASE_START_VERIFY_LEGAL_BASIS       0.17      1.00      0.29         1
+                                                                                              COMPLIANT       0.00      0.00      0.00        28
+                                                                          DATA_ACCESS_CONTROL_FORBIDDEN       0.00      0.00      0.00         9
+                                                                           DATA_ACCESS_CONTROL_REQUIRED       0.00      0.00      0.00         1
+                                                                       DATA_COLLECTION_CONSENT_REQUIRED       0.00      0.00      0.00         1
+                                                                       DATA_COLLECTION_LEGAL_BASIS_FLOW       0.00      0.00      0.00         4
+                                                                                 DATA_COLLECTION_NOTICE       0.00      0.00      0.00         4
+                                                                               DATA_COLLECTION_REQUIRED       0.00      0.00      0.00         0
+                                                                           DATA_DELETION_ERASE_REQUIRED       0.00      0.00      0.00         1
+                                                                                 DATA_DELETION_REQUIRED       0.00      0.00      0.00         0
+                                                                       DATA_DELETION_RETENTION_REQUIRED       0.00      0.00      0.00         1
+                                                                    DATA_PROCESSING_ENCRYPTION_REQUIRED       0.00      0.00      0.00         1
+                                                                           DATA_PROCESSING_LOG_REQUIRED       0.00      0.00      0.00         4
+                                                                           DATA_PROCESSING_MINIMISATION       0.00      0.00      0.00         2
+                                                                               DATA_PROCESSING_REQUIRED       0.00      0.00      0.00         0
+                                                                  DATA_TRANSFER_INTERNATIONAL_FORBIDDEN       0.00      0.00      0.00         9
+                                                                   DATA_TRANSFER_INTERNATIONAL_REQUIRED       0.00      0.00      0.00         1
+                                                                                 DATA_TRANSFER_REQUIRED       0.00      0.00      0.00         0
+                                                                    DATA_TRANSFER_THIRD_PARTY_FORBIDDEN       0.00      0.00      0.00        10
+                                                                     DATA_TRANSFER_THIRD_PARTY_REQUIRED       0.00      0.00      0.00         1
+                                                                           USER_RIGHT_ACCESS_COMPLIANCE       0.00      0.00      0.00         1
+                                                                            USER_RIGHT_REQUEST_REQUIRED       0.00      0.00      0.00         0
+                                                                   USER_RIGHT_REQUEST_RESPONSE_REQUIRED       0.00      0.00      0.00         2
+["activityType":"request_erasure_REQUIRED_REQUEST_REQUIRED_REQUIRED_REQUIRED_REQUIRED_REQUIRED_REQUIRED       0.00      0.00      0.00         0
+                                                                                  [DATA_ACCESS_REQUIRED       0.00      0.00      0.00         0
+                                                                                [DATA_TRANSFER_REQUIRED       0.00      0.00      0.00         0
 
-                                                                                                                            accuracy                           0.02        84
-                                                                                                                           macro avg       0.01      0.06      0.02        84
-                                                                                                                        weighted avg       0.00      0.02      0.01        84
+                                                                                               accuracy                           0.01        84
+                                                                                              macro avg       0.01      0.03      0.01        84
+                                                                                           weighted avg       0.00      0.01      0.00        84

@@ -221,6 +221,96 @@ class EnrichmentSuccessDialog(QDialog):
         self.btn_export.clicked.connect(lambda: self.done(2))
         self.btn_close.clicked.connect(self.reject)
 
+
+class EnrichmentInfoDialog(QDialog):
+    def __init__(self, typing_rows, context_summary, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Información del enriquecimiento")
+        self.resize(760, 620)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0d1117;
+                color: #c9d1d9;
+            }
+            QLabel#DialogTitle {
+                color: #58a6ff;
+                font-size: 16px;
+                font-weight: 800;
+            }
+            QTextEdit {
+                background-color: #0d1117;
+                color: #c9d1d9;
+                border: 1px solid #30363d;
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 12px;
+            }
+            QPushButton {
+                background-color: #21262d;
+                color: #c9d1d9;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 8px 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #30363d;
+                color: #ffffff;
+            }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(12)
+
+        title = QLabel("Información del enriquecimiento")
+        title.setObjectName("DialogTitle")
+        layout.addWidget(title)
+
+        body = QTextEdit()
+        body.setReadOnly(True)
+        body.setHtml(self._build_html(typing_rows, context_summary))
+        layout.addWidget(body)
+
+        actions = QHBoxLayout()
+        actions.addStretch()
+        close_btn = QPushButton("Cerrar")
+        close_btn.clicked.connect(self.close)
+        actions.addWidget(close_btn)
+        layout.addLayout(actions)
+
+    @staticmethod
+    def _build_html(typing_rows, context_summary):
+        activity_items = []
+        for row in typing_rows or []:
+            activity = row.get("activity", "Actividad desconocida")
+            activity_type = row.get("activity_type", "OTHER")
+            user_right_type = row.get("user_right_type")
+            suffix = f" / {user_right_type}" if user_right_type else ""
+            activity_items.append(
+                f"<tr><td>{activity}</td><td><b>{activity_type}{suffix}</b></td></tr>"
+            )
+
+        if not activity_items:
+            activity_items.append(
+                "<tr><td colspan='2'>No hay tipado de eventos disponible.</td></tr>"
+            )
+
+        return f"""
+        <h2 style='color:#58a6ff;'>Contexto inferido</h2>
+        <p style='line-height:1.45;'>{context_summary or 'No hay contexto inferido disponible.'}</p>
+        <h2 style='color:#58a6ff;'>Tipado de eventos</h2>
+        <table cellspacing='0' cellpadding='6' width='100%' style='border-collapse:collapse;'>
+            <tr style='background-color:#161b22; color:#8b949e;'>
+                <th align='left'>Actividad</th>
+                <th align='left'>ActivityType asignado</th>
+            </tr>
+            {''.join(activity_items)}
+        </table>
+        """
+
+
 class EnrichmentView(QWidget):
     def __init__(self, on_enrich, on_export, on_info, on_next, on_node_clicked=None):
         super().__init__()
@@ -429,6 +519,9 @@ class EnrichmentView(QWidget):
         
         panel_layout.addWidget(metrics_card)
 
+        self._last_typing_rows = []
+        self._last_context_summary = "Ejecuta el enriquecimiento para ver el contexto inferido."
+
         # =====================================================
         # CAMBIO: TÍTULO Y WIDGET INTERACTIVO DE ENRIQUECIMIENTO
         # =====================================================
@@ -447,6 +540,20 @@ class EnrichmentView(QWidget):
         self.enrichment_tree.addTopLevelItem(initial_item)
         
         panel_layout.addWidget(self.enrichment_tree)
+        self.enrichment_tree.setVisible(False)
+
+        self.enrichment_info_button = QPushButton("VER INFORMACIÓN DEL ENRIQUECIMIENTO")
+        self.enrichment_info_button.setObjectName("SecBtn")
+        self.enrichment_info_button.setEnabled(False)
+        self.enrichment_info_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.enrichment_info_button.clicked.connect(self._show_enrichment_info)
+
+        self.enrichment_info_status = QLabel("Ejecuta el enriquecimiento para ver el tipado y el contexto inferido.")
+        self.enrichment_info_status.setWordWrap(True)
+        self.enrichment_info_status.setStyleSheet("color: #8b949e; font-size: 11px;")
+
+        panel_layout.addWidget(self.enrichment_info_button)
+        panel_layout.addWidget(self.enrichment_info_status)
         panel_layout.addStretch()
         
         # Agregar el panel al layout principal
@@ -549,7 +656,24 @@ class EnrichmentView(QWidget):
         main_layout.addWidget(panel)
         main_layout.addWidget(self.map_container, stretch=1)
 
-    def update_activity_typing(self, typing_rows):
+    def update_activity_typing(self, typing_rows, context_summary=None):
+        self._last_typing_rows = typing_rows or []
+        self._last_context_summary = context_summary or "No hay contexto inferido disponible."
+        has_info = bool(self._last_typing_rows) or bool(context_summary)
+
+        self.enrichment_info_button.setEnabled(has_info)
+
+        if has_info:
+            self.enrichment_info_status.setText(
+                f"{len(self._last_typing_rows)} actividades tipadas. Pulsa el botón para ver el contexto inferido."
+            )
+        else:
+            self.enrichment_info_status.setText(
+                "Ejecuta el enriquecimiento para ver el tipado y el contexto inferido."
+            )
+        return
+
+    def _update_activity_typing_tree(self, typing_rows):
         """Actualiza el árbol interactivo con el tipado y los contextos."""
         self.enrichment_tree.clear()
 
@@ -589,6 +713,14 @@ class EnrichmentView(QWidget):
             # Insertamos la actividad al árbol principal
             self.enrichment_tree.addTopLevelItem(parent_item)
 
+
+    def _show_enrichment_info(self):
+        dialog = EnrichmentInfoDialog(
+            self._last_typing_rows,
+            self._last_context_summary,
+            self,
+        )
+        dialog.exec()
 
     def _add_metric_row(self, layout, key, value):
         # Método auxiliar placeholder por si acaso no venía en tu fragmento

@@ -41,6 +41,7 @@ from app.services.ai.t5.t5_client import T5Client
 from app.services.ai.t5.prompts.gdpr_impact_dsl_prompt import (
     GDPRImpactDSLPromptBuilder,
 )
+from app.services.ai.t5.prompts.gdpr_validation_prompt import GDPRValidationPromptBuilder
 from app.services.ai.t5.validation_rule_catalog import ValidationRuleCatalog
 from app.services.ai.t5.validators.impact_parser import parse_impact_response
 from app.mutations.registry.mutation_registry import MUTATION_REGISTRY
@@ -304,7 +305,7 @@ def build_dataset_rows(examples):
             "source_file": example.get("source_file", ""),
             "trace_id": example.get("trace_id", trace_json.get("traceId", "")),
             "rule_evaluated": rule_label,
-            "baseline_input": example["input_text"],
+            "baseline_input": GDPRValidationPromptBuilder.build(json.dumps(trace_json)),
             "baseline_target": example["target_text"],
             "baseline_y_true": rule_label,
             "simplified_input": build_dsl_input(trace_json, rule_label),

@@ -37,10 +37,10 @@ class MutationEngine:
                 warnings = validation.get("warnings", [])
 
                 # 1. Determinar severidad
-                severity = (
-                    "VIOLATION" if violations
-                    else "WARNING" if warnings
-                    else "OK"
+                severity = self._severity_from_validation(
+                    validation,
+                    violations,
+                    warnings
                 )
 
                 # =====================================================
@@ -77,3 +77,25 @@ class MutationEngine:
             mutated_traces.append(mutated_trace)
 
         return mutated_traces, report
+
+    @staticmethod
+    def _severity_from_validation(validation, violations, warnings):
+        impact = validation.get("impact")
+
+        if not impact and validation.get("ai_result"):
+            impact = validation["ai_result"].get("impact")
+
+        if impact in {"0", "0_COMPLIANT"}:
+            return "COMPLIANT"
+
+        if impact in {"1", "1_VIOLATION"}:
+            return "VIOLATION"
+
+        if impact in {"2", "2_WARNING"}:
+            return "WARNING"
+
+        return (
+            "VIOLATION" if violations
+            else "WARNING" if warnings
+            else "COMPLIANT"
+        )

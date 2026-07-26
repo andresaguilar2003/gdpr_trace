@@ -4,7 +4,7 @@
   "baseline_model": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\services\\ai\\t5\\models\\gdpr_t5_validator",
   "simplified_model": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\services\\ai\\t5\\models\\gdpr_t5_impact_dsl",
   "data_dir": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\services\\ai\\t5\\data\\processed",
-  "generated_at": "2026-07-26T18:39:05",
+  "generated_at": "2026-07-26T19:09:14",
   "coverage": {
     "sampling_strategy": "impact_balanced",
     "source_example_count": 40,

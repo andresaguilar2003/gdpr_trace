@@ -29,13 +29,25 @@ class TraceDetailDialog(QDialog):
         mutation_lbl.setTextFormat(Qt.RichText)
         
         # Color dinámico de severidad
-        sev_color = "#ff7b72" if trace_report.severity == "VIOLATION" else "#d29922" if trace_report.severity == "WARNING" else "#56d364"
+        display_severity = TraceDetailDialog._display_severity(trace_report.severity)
+        sev_color = "#ff7b72" if display_severity == "VIOLATION" else "#d29922" if display_severity == "WARNING" else "#56d364"
         severity_lbl = QLabel(f"⚠️ SEVERITY: <span style='color:{sev_color}; font-weight:bold;'>{trace_report.severity}</span>")
+        severity_lbl.setText(f"SEVERITY: <span style='color:{sev_color}; font-weight:bold;'>{display_severity}</span>")
         severity_lbl.setTextFormat(Qt.RichText)
 
         validation_mode = trace_report.validator_result.get("validation_mode", "deterministic")
         mode_lbl = QLabel(f"VALIDATOR: <span style='color:#58a6ff; font-weight:bold;'>{validation_mode.upper()}</span>")
         mode_lbl.setTextFormat(Qt.RichText)
+
+        impact = TraceDetailDialog._impact_text(trace_report.validator_result)
+        impact_color = (
+            "#56d364" if impact == "0_COMPLIANT"
+            else "#ff7b72" if impact == "1_VIOLATION"
+            else "#d29922" if impact == "2_WARNING"
+            else "#8b949e"
+        )
+        impact_lbl = QLabel(f"AI IMPACT: <span style='color:{impact_color}; font-weight:bold;'>{impact}</span>")
+        impact_lbl.setTextFormat(Qt.RichText)
 
         agreement = trace_report.validator_result.get("agrees_with_ai")
         agreement_lbl = None
@@ -50,6 +62,8 @@ class TraceDetailDialog(QDialog):
 
         info_layout.addWidget(mutation_lbl)
         info_layout.addWidget(mode_lbl)
+        if impact != "-":
+            info_layout.addWidget(impact_lbl)
         if agreement_lbl:
             info_layout.addWidget(agreement_lbl)
         info_layout.addWidget(severity_lbl)
@@ -101,15 +115,22 @@ class TraceDetailDialog(QDialog):
             html_content.append("<p style='color:#8b949e; italic;'>No secondary warnings found for this trace execution.</p>")
 
         ai_result = trace_report.validator_result.get("ai_result")
+        direct_ai_result = (
+            trace_report.validator_result
+            if trace_report.validator_result.get("impact")
+            else None
+        )
 
-        if ai_result:
+        if ai_result or direct_ai_result:
+            displayed_ai_result = ai_result or direct_ai_result
             html_content.append("<br>")
             html_content.append("<b style='color:#58a6ff; font-size:13px;'>T5 AI VALIDATOR OUTPUT</b>")
             html_content.append("<hr style='border: 1px solid #30363d;'>")
-            html_content.append(f"<p><b>Raw:</b> {ai_result.get('rawResponse', '')}</p>")
+            html_content.append(f"<p><b>Impact:</b> {displayed_ai_result.get('impact', '-')}</p>")
+            html_content.append(f"<p><b>Raw:</b> {displayed_ai_result.get('rawResponse', '')}</p>")
 
-            ai_violations = ai_result.get("violations", [])
-            ai_warnings = ai_result.get("warnings", [])
+            ai_violations = displayed_ai_result.get("violations", [])
+            ai_warnings = displayed_ai_result.get("warnings", [])
 
             html_content.append("<b>AI violations:</b>")
             if ai_violations:
@@ -138,6 +159,19 @@ class TraceDetailDialog(QDialog):
         actions_layout.addWidget(close_button)
         
         layout.addLayout(actions_layout)
+
+    @staticmethod
+    def _display_severity(severity):
+        return "COMPLIANT" if severity == "OK" else severity
+
+    @staticmethod
+    def _impact_text(validator_result):
+        impact = validator_result.get("impact")
+
+        if not impact and validator_result.get("ai_result"):
+            impact = validator_result["ai_result"].get("impact")
+
+        return impact or "-"
 
 
 class MutationReportWindow(QWidget):
@@ -197,7 +231,7 @@ class MutationReportWindow(QWidget):
         filters_layout.setSpacing(10)
 
         self.severity_filter = QComboBox()
-        self.severity_filter.addItems(["ALL", "VIOLATION", "WARNING", "OK"])
+        self.severity_filter.addItems(["ALL", "VIOLATION", "WARNING", "COMPLIANT"])
 
         self.mutation_filter = QComboBox()
         mutations = sorted(set(r.mutation_name for r in self.report.trace_reports))
@@ -220,10 +254,11 @@ class MutationReportWindow(QWidget):
         # DATA TABLE
         # =================================================
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
+        self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
             "Trace Target ID",
             "Applied Mutation Engine",
+            "AI Impact",
             "Audit Status",
             "Violations Count",
             "Warnings Count"
@@ -244,7 +279,8 @@ class MutationReportWindow(QWidget):
 
         filtered = []
         for report in self.report.trace_reports:
-            if severity_filter != "ALL" and report.severity != severity_filter:
+            display_severity = TraceDetailDialog._display_severity(report.severity)
+            if severity_filter != "ALL" and display_severity != severity_filter:
                 continue
             if mutation_filter != "ALL" and report.mutation_name != mutation_filter:
                 continue
@@ -256,6 +292,8 @@ class MutationReportWindow(QWidget):
         for row, report in enumerate(filtered):
             violations = len(report.validator_result["violations"])
             warnings = len(report.validator_result["warnings"])
+            impact = TraceDetailDialog._impact_text(report.validator_result)
+            display_severity = TraceDetailDialog._display_severity(report.severity)
 
             # Trace ID (Centrado)
             item_id = QTableWidgetItem(str(report.trace_id))
@@ -263,12 +301,22 @@ class MutationReportWindow(QWidget):
             
             # Mutation Name
             item_mut = QTableWidgetItem(report.mutation_name)
+
+            item_impact = QTableWidgetItem(impact)
+            item_impact.setTextAlignment(Qt.AlignCenter)
+            if impact == "0_COMPLIANT":
+                item_impact.setForeground(Qt.GlobalColor.green)
+            elif impact == "1_VIOLATION":
+                item_impact.setForeground(Qt.GlobalColor.red)
+            elif impact == "2_WARNING":
+                item_impact.setForeground(Qt.GlobalColor.yellow)
             
             # Status Badge Dinámico
             item_sev = QTableWidgetItem(f" ● {report.severity}")
-            if report.severity == "VIOLATION":
+            item_sev.setText(f" ● {display_severity}")
+            if display_severity == "VIOLATION":
                 item_sev.setForeground(Qt.GlobalColor.red)
-            elif report.severity == "WARNING":
+            elif display_severity == "WARNING":
                 item_sev.setForeground(Qt.GlobalColor.yellow)
             else:
                 item_sev.setForeground(Qt.GlobalColor.green)
@@ -290,9 +338,10 @@ class MutationReportWindow(QWidget):
 
             self.table.setItem(row, 0, item_id)
             self.table.setItem(row, 1, item_mut)
-            self.table.setItem(row, 2, item_sev)
-            self.table.setItem(row, 3, item_v)
-            self.table.setItem(row, 4, item_w)
+            self.table.setItem(row, 2, item_impact)
+            self.table.setItem(row, 3, item_sev)
+            self.table.setItem(row, 4, item_v)
+            self.table.setItem(row, 5, item_w)
 
         self.table.resizeColumnsToContents()
 
