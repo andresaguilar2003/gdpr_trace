@@ -153,3 +153,32 @@ Alteran dependencias lógicas complejas y transiciones de estado multi-evento. N
 * `incomplete_deletion_chain`:
   * **Clase asociada:** `RemoveEventMutation("erase_data")`
   * **Propósito:** Simula un cumplimiento parcial o defectuoso en la cadena de destrucción física de la información. El sistema mantiene intacto el evento formal de verificación de plazos (`record_retention_period`), pero elimina la ejecución del evento técnico de purga real de las bases de datos (`erase_data`). Genera una brecha de cumplimiento crítico donde el proceso aparenta administrativamente haber concluido con éxito pero mantiene los datos almacenados de forma ilícita.
+
+
+## 5. Nuevas Mutaciones Propuestas para la Ampliación del Catálogo
+
+Este subapartado introduce las nuevas mutaciones formuladas con el objetivo de equilibrar el número de variantes y robustecer el dataset para el análisis predictivo y redacción de artículos de investigación.
+
+### 5.1. Nuevas Mutaciones Estructurales de Reemplazo (`MutationCategory.STRUCTURAL` - REPLACE)
+
+* `replace_consent_with_privacy_notice`:
+  * **Clase asociada:** `ReplaceEventMutation("check_consent", "privacy_notice_disclosed")`
+  * **Propósito:** En una actividad de recolección de datos (`DATA_COLLECTION`) bajo consentimiento del usuario, sustituye el evento de verificación activa del consentimiento (`check_consent`) por la mera publicación informativa del aviso de privacidad (`privacy_notice_disclosed`). Simula una mala práctica donde se asume erróneamente que informar de forma pasiva convalida la ausencia de una base de consentimiento recabado explícitamente.
+* `replace_erase_primary_record_with_mark_restricted`:
+  * **Clase asociada:** `ReplaceEventMutation("erase_primary_record", "mark_data_as_restricted")`
+  * **Propósito:** Ante el ejercicio del derecho al olvido/supresión (`UserRightType.ERASURE`), reemplaza el evento de destrucción física del registro principal (`erase_primary_record`) por una etiqueta de restricción temporal (`mark_data_as_restricted`). Esto simula un incumplimiento normativo grave por dilación en la eliminación real del dato personal.
+
+### 5.2. Nuevas Mutaciones Estructurales de Duplicación (`MutationCategory.STRUCTURAL` - DUPLICATE)
+
+* `duplicate_access_control_check`:
+  * **Clase asociada:** `DuplicateEventMutation("access_control_check")`
+  * **Propósito:** Duplica el evento de control de acceso ante tratamientos con categorías de datos de alta sensibilidad. Sirve para poner a prueba si los validadores de cumplimiento y seguridad identifican de manera correcta redundancias ineficientes o sobre-procesamiento técnico de seguridad en logs transaccionales.
+
+### 5.3. Nuevas Mutaciones Temporales de Intercambio (`MutationCategory.TEMPORAL` - SWAP)
+
+* `swap_third_party_agreement_and_transfer`:
+  * **Clase asociada:** `SwapEventOrderMutation("check_third_party_agreement", "DATA_TRANSFER")`
+  * **Propósito:** Altera el orden cronológico entre el evento regulador de verificación del acuerdo de encargo de tratamiento con un tercero (`check_third_party_agreement`) y la propia actividad transaccional de envío (`DATA_TRANSFER`). Provoca que la transferencia de datos ocurra de manera previa a la validación de sus garantías legales.
+* `swap_minimisation_check_and_processing`:
+  * **Clase asociada:** `SwapEventOrderMutation("minimisation_check", "log_processing_activity")`
+  * **Propósito:** Desplaza la verificación obligatoria del principio de minimización de datos (`minimisation_check`) para que ocurra temporalmente después de haber registrado o iniciado la actividad operativa de procesamiento (`log_processing_activity`). Esto infringe flagrantemente el principio de Privacidad por Diseño (Art. 25 del RGPD).

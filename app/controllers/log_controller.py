@@ -8,6 +8,7 @@ from app.mutations.services.mutation_engine import MutationEngine
 from app.services.ai.t5.t5_client import T5Client
 from app.services.ai.t5.validation_rule_catalog import ValidationRuleCatalog
 from app.services.ai.t5.validators.ai_gdpr_validator import AIGDPRValidator
+from app.services.ai.t5.validators.ai_gdpr_impact_validator import AIGDPRImpactValidator
 from app.services.pm4py_log_converter import traces_to_pm4py_log
 from app.services.trace_context_inferer import TraceContextInferer, GDPRContextNormalizer
 from app.validation.validators.gdpr_enrichment_validator import GDPREnrichmentValidator
@@ -36,12 +37,28 @@ class _AIValidatorAdapter:
         self.fallback_to_deterministic = fallback_to_deterministic
 
     def validate(self, trace):
-        result = self.ai_validator.validate(trace)
         deterministic_result = GDPREnrichmentValidator.validate(trace)
         deterministic_violations = deterministic_result.get("violations", [])
         deterministic_warnings = deterministic_result.get("warnings", [])
+        rule_label = self._primary_rule_label(
+            deterministic_violations,
+            deterministic_warnings,
+        )
+
+        try:
+            result = self.ai_validator.validate(trace, rule_label=rule_label)
+        except TypeError:
+            result = self.ai_validator.validate(trace)
 
         result["validation_mode"] = "ai"
+        result["rule_evaluated"] = rule_label
+
+        if result.get("impact") == "1_VIOLATION" and deterministic_violations:
+            result["violations"] = list(deterministic_violations)
+
+        if result.get("impact") == "2_WARNING" and deterministic_warnings:
+            result["warnings"] = list(deterministic_warnings)
+
         result["violations"] = self._complete_issues(
             result.get("violations", []),
             issue_type="violation",
@@ -55,6 +72,14 @@ class _AIValidatorAdapter:
         result["deterministic_reference"] = deterministic_result
 
         return result
+
+    @staticmethod
+    def _primary_rule_label(violations, warnings):
+        for issue in list(violations or []) + list(warnings or []):
+            if issue.get("rule"):
+                return issue["rule"]
+
+        return "COMPLIANCE_CHECK"
 
     def _complete_issues(self, issues, issue_type, deterministic_issues=None):
         deterministic_issues = deterministic_issues or []
@@ -284,7 +309,13 @@ class LogController:
         if self._ai_validator is not None:
             return self._ai_validator
 
+        dsl_model_path = Path("app/services/ai/t5/models/gdpr_t5_impact_dsl")
         model_path = Path("app/services/ai/t5/models/gdpr_t5_validator")
+
+        if dsl_model_path.exists():
+            llm = T5Client(str(dsl_model_path))
+            self._ai_validator = AIGDPRImpactValidator(llm)
+            return self._ai_validator
 
         if model_path.exists():
             llm = T5Client(str(model_path))

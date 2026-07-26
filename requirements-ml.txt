@@ -12,3 +12,4 @@ superqt
 matplotlib
 seaborn
 reportlab
+pypdf
