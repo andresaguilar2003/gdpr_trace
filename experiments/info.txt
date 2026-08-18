@@ -1,0 +1,1 @@
+This folder contains the experimental material developed for the project: the T5 validator experiment, the RoBERTa vs Phi-3 inference experiment, and the OCL rule optimisation experiment.

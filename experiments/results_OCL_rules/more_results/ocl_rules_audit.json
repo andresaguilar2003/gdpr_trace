@@ -1,0 +1,1242 @@
+{
+  "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+  "model_backend": "none",
+  "model_id": "microsoft/Phi-4-mini-instruct",
+  "llm_summary": {
+    "engine": "heuristic",
+    "summary": "Deterministic audit used because Phi-4-mini was disabled or unavailable.",
+    "suggested_rules": [
+      {
+        "name": "DATA_BREACH_NOTIFICATION_REQUIRED",
+        "reason": "No explicit rule covers GDPR Articles 33 and 34 breach notification timelines.",
+        "ocl": "context Trace\ninv DATA_BREACH_NOTIFICATION_REQUIRED:\n    for all e where e.name = detect_personal_data_breach:\n        exists g where g.name = notify_supervisory_authority AND g.order > e.order"
+      },
+      {
+        "name": "CONSENT_WITHDRAWAL_STOP_PROCESSING",
+        "reason": "Consent withdrawal is not explicitly connected to halting subsequent processing.",
+        "ocl": "context Trace\ninv CONSENT_WITHDRAWAL_STOP_PROCESSING:\n    for all e where e.name = withdraw_consent:\n        not exists p where p.type = DATA_PROCESSING AND p.order > e.order"
+      },
+      {
+        "name": "DPIA_HIGH_RISK_PROCESSING_REQUIRED",
+        "reason": "High-risk or special-category processing should be linked to a DPIA evidence event.",
+        "ocl": "context Trace\ninv DPIA_HIGH_RISK_PROCESSING_REQUIRED:\n    if context.data_category in {SPECIAL, HEALTH}:\n        exists g where g.name = perform_dpia AND g.order < first(DATA_PROCESSING).order"
+      }
+    ]
+  },
+  "metrics": {
+    "initial_rules": 41,
+    "optimized_rules": 28,
+    "suggested_rules": 3,
+    "merge_groups": 4,
+    "compression_ratio": 0.3171,
+    "average_logic_complexity": 6.73,
+    "status_distribution": {
+      "CORRECTA": 21,
+      "MODIFICADA": 4,
+      "FUSIONADA": 16
+    }
+  },
+  "rules": [
+    {
+      "name": "CASE_START_VERIFY_LEGAL_BASIS",
+      "ocl": "context Trace\ninv CASE_START_VERIFY_LEGAL_BASIS:\nfor all e in events where e.type = CASE_START:\nexists g in events such that\ng.name = verify_legal_basis AND\ng.position = AFTER AND\ng.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_START",
+        "verify_legal_basis"
+      ],
+      "context_terms": [
+        "legal_basis"
+      ],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.75,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "CASE_START_VERIFY_LEGAL_BASIS"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv CASE_START_VERIFY_LEGAL_BASIS:\nfor all e in events where e.type = CASE_START:\nexists g in events such that\ng.name = verify_legal_basis AND\ng.position = AFTER AND\ng.order > e.order"
+    },
+    {
+      "name": "DATA_COLLECTION_NOTICE",
+      "ocl": "context Trace\ninv DATA_COLLECTION_NOTICE:\nfor all e where e.type = DATA_COLLECTION:\nexists g where\ng.name = privacy_notice_disclosed AND\ng.position = AFTER AND\ng.order >= e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_COLLECTION",
+        "privacy_notice_disclosed"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.2,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_COLLECTION_NOTICE"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_COLLECTION_NOTICE:\nfor all e where e.type = DATA_COLLECTION:\nexists g where\ng.name = privacy_notice_disclosed AND\ng.position = AFTER AND\ng.order >= e.order"
+    },
+    {
+      "name": "DATA_COLLECTION_CONSENT_REQUIRED",
+      "ocl": "context Trace\ninv DATA_COLLECTION_CONSENT_REQUIRED:\nif legal_basis = consent:\nexists g where\ng.name = check_consent AND\ng.position = BEFORE AND\ng.order  e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_COLLECTION",
+        "check_consent"
+      ],
+      "context_terms": [
+        "legal_basis"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "order",
+        "position"
+      ],
+      "complexity": 6,
+      "coverage_score": 0.7,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_COLLECTION_CONSENT_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_COLLECTION_CONSENT_REQUIRED:\nif legal_basis = consent:\nexists g where\ng.name = check_consent AND\ng.position = BEFORE AND\ng.order  e.order"
+    },
+    {
+      "name": "USER_RIGHT_ACCESS_DATA_COPY",
+      "ocl": "context Trace\ninv USER_RIGHT_ACCESS_DATA_COPY:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type = ACCESS:\nexists g where g.name = provide_data_copy AND g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "provide_data_copy"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 7,
+      "coverage_score": 0.5909,
+      "status": "MODIFICADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_RECTIFICATION_COMPLIANCE:\nfor all e where\ne.type = USER_RIGHT_REQUEST and\ne.user_right_type = RECTIFICATION:\nexists g1 where\ng1.name = update_primary_record and\ng1.order > e.order\nand exists g2 where\ng2.name = propagate_rectification_to_replicas and\ng2.order > e.order\nand exists g3 where\ng3.name = notify_data_rectification_to_recipients and\ng3.order > e.order\nand exists g4 where\ng4.name = verify_rectification_consistency and\ng4.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "notify_data_rectification_to_recipients",
+        "propagate_rectification_to_replicas",
+        "update_primary_record",
+        "verify_rectification_consistency"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 10,
+      "coverage_score": 4.0909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_ERASURE_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_ERASURE_COMPLIANCE:\nfor all e where\ne.type = USER_RIGHT_REQUEST and\ne.user_right_type = ERASURE:\nexists g1 where\ng1.name = erase_primary_record and\ng1.order > e.order\nand exists g2 where\ng2.name = propagate_erasure_to_replicas and\ng2.order > e.order\nand exists g3 where\ng3.name = notify_third_party_deletion and\ng3.order > e.order\nand exists g4 where\ng4.name = verify_erasure_completion and\ng4.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "erase_primary_record",
+        "notify_third_party_deletion",
+        "propagate_erasure_to_replicas",
+        "verify_erasure_completion"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 10,
+      "coverage_score": 4.0909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_RESTRICTION_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_RESTRICTION_COMPLIANCE:\nfor all e where\ne.type = USER_RIGHT_REQUEST and\ne.user_right_type = RESTRICTION:\nexists g0 where\ng0.name = verify_request_identity and\ng0.order  e.order\nand exists g3 where\ng3.name = respond_user_right and\ng3.order > g2.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "respond_user_right",
+        "verify_request_identity"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 10,
+      "coverage_score": 1.4242,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_PORTABILITY_FORMAT",
+      "ocl": "context Trace\ninv USER_RIGHT_PORTABILITY_FORMAT:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type =\nPORTABILITY:\nexists g where g.name = generate_interoperable_format AND g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "generate_interoperable_format"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 7,
+      "coverage_score": 0.5909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_PORTABILITY_TRANSMISSION",
+      "ocl": "context Trace\ninv USER_RIGHT_PORTABILITY_TRANSMISSION:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type =\nPORTABILITY:\nexists g where g.name = transmit_data_to_new_controller AND g.order >\ne.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 7,
+      "coverage_score": 0.0909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_OBJECTION_HALT",
+      "ocl": "context Trace\ninv USER_RIGHT_OBJECTION_HALT:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type = OBJECTION:\nexists g where g.name = halt_processing_activities AND g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "halt_processing_activities"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 7,
+      "coverage_score": 0.5909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+      "ocl": "context Trace\ninv USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type = OBJECTION:\nexists g where g.name = verify_compelling_legitimate_grounds AND g.position\n= BEFORE",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "verify_compelling_legitimate_grounds"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.0909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+      "ocl": "context Trace\ninv USER_RIGHT_AUTOMATED_DECISION_CONTEST:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type =\nAUTOMATED_DECISION_REVIEW:\nexists g where\ng.name = contest_automated_decision AND\ng.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "AUTOMATED_DECISION",
+        "USER_RIGHT_REQUEST",
+        "contest_automated_decision"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "exists",
+        "for all",
+        "order"
+      ],
+      "complexity": 7,
+      "coverage_score": 0.7909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_INFORMATION_TRANSPARENCY",
+      "ocl": "context Trace\ninv USER_RIGHT_INFORMATION_TRANSPARENCY:\nfor all e where e.type = USER_RIGHT_REQUEST and e.user_right_type =\nINFORMATION:\nexists g where\ng.name = provide_transparency_details AND\ng.position = AFTER AND\ng.order > e.order\nCapítulo IV — Responsable y encargado\ndel tratamiento\n(Artículos 24–43)",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "provide_transparency_details"
+      ],
+      "context_terms": [
+        "user_right_type"
+      ],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 9,
+      "coverage_score": 0.5909,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_1BC41317",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_DATA_COPY",
+        "USER_RIGHT_AUTOMATED_DECISION_CONTEST",
+        "USER_RIGHT_ERASURE_COMPLIANCE",
+        "USER_RIGHT_INFORMATION_TRANSPARENCY",
+        "USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION",
+        "USER_RIGHT_OBJECTION_HALT",
+        "USER_RIGHT_PORTABILITY_FORMAT",
+        "USER_RIGHT_PORTABILITY_TRANSMISSION",
+        "USER_RIGHT_RECTIFICATION_COMPLIANCE",
+        "USER_RIGHT_RESTRICTION_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_1BC41317:\n    -- Refactors: USER_RIGHT_ACCESS_DATA_COPY, USER_RIGHT_AUTOMATED_DECISION_CONTEST, USER_RIGHT_ERASURE_COMPLIANCE, USER_RIGHT_INFORMATION_TRANSPARENCY, USER_RIGHT_OBJECTION_GROUNDS_VERIFICATION, USER_RIGHT_OBJECTION_HALT, USER_RIGHT_PORTABILITY_FORMAT, USER_RIGHT_PORTABILITY_TRANSMISSION, USER_RIGHT_RECTIFICATION_COMPLIANCE, USER_RIGHT_RESTRICTION_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, erase_primary_record, generate_interoperable_format, halt_processing_activities, notify_data_rectification_to_recipients, notify_third_party_deletion, propagate_erasure_to_replicas, propagate_rectification_to_replicas, provide_data_copy, provide_transparency_details, respond_user_right, update_primary_record, verify_compelling_legitimate_grounds, verify_erasure_completion, verify_rectification_consistency, verify_request_identity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "DATA_PROCESSING_MINIMISATION",
+      "ocl": "context Trace\ninv DATA_PROCESSING_MINIMISATION:\nfor all e where e.type = DATA_PROCESSING:\nexists g where\ng.name = minimisation_check AND\ng.position = BEFORE AND\ng.order  e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_PROCESSING",
+        "minimisation_check"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 7,
+      "coverage_score": 1.25,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_PROCESSING_MINIMISATION"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_PROCESSING_MINIMISATION:\nfor all e where e.type = DATA_PROCESSING:\nexists g where\ng.name = minimisation_check AND\ng.position = BEFORE AND\ng.order  e.order"
+    },
+    {
+      "name": "DATA_ACCESS_CONTROL_REQUIRED",
+      "ocl": "context Trace\ninv DATA_ACCESS_CONTROL_REQUIRED:\nif data_category in {HEALTH, SPECIAL}:\nexists g where\ng.name = access_control_check AND\ng.position = BEFORE AND\ng.order  e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_ACCESS",
+        "access_control_check"
+      ],
+      "context_terms": [
+        "data_category"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "order",
+        "position"
+      ],
+      "complexity": 6,
+      "coverage_score": 0.5833,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_ACCESS_CONTROL_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_ACCESS_CONTROL_REQUIRED:\nif data_category in {HEALTH, SPECIAL}:\nexists g where\ng.name = access_control_check AND\ng.position = BEFORE AND\ng.order  e.order"
+    },
+    {
+      "name": "CASE_END_RETENTION_VERIFY",
+      "ocl": "context Trace\ninv CASE_END_RETENTION_VERIFY:\nfor all e in events where e.type = CASE_END:\nexists g in events such that\ng.name = 'retention_period_verify' AND\ng.position = BEFORE AND\ng.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_END",
+        "retention_period_verify"
+      ],
+      "context_terms": [
+        "retention_period"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.3333,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "CASE_END_RETENTION_VERIFY"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv CASE_END_RETENTION_VERIFY:\nfor all e in events where e.type = CASE_END:\nexists g in events such that\ng.name = 'retention_period_verify' AND\ng.position = BEFORE AND\ng.order < e.order"
+    },
+    {
+      "name": "CASE_END_ERASURE",
+      "ocl": "context Trace\ninv CASE_END_ERASURE:\nfor all e in events where e.type = CASE_END:\nif not context.retention_period.oclIsUndefined() then\nexists g in events such that\ng.name = 'confirm_data_erasure' AND\ng.position = BEFORE AND\ng.order < e.order\nelse\ntrue\nendif",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_END",
+        "confirm_data_erasure"
+      ],
+      "context_terms": [
+        "retention_period"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.3333,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "CASE_END_ERASURE"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv CASE_END_ERASURE:\nfor all e in events where e.type = CASE_END:\nif not context.retention_period.oclIsUndefined() then\nexists g in events such that\ng.name = 'confirm_data_erasure' AND\ng.position = BEFORE AND\ng.order < e.order\nelse\ntrue\nendif"
+    },
+    {
+      "name": "DATA_COLLECTION_CONSENT_FORBIDDEN",
+      "ocl": "context Trace\ninv DATA_COLLECTION_CONSENT_FORBIDDEN:\nif legal_basis != consent:\nnot exists g where g.name = check_consent",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_COLLECTION",
+        "check_consent"
+      ],
+      "context_terms": [
+        "legal_basis"
+      ],
+      "temporal_terms": [
+        "exists"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.7,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_COLLECTION_CONSENT_FORBIDDEN"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_COLLECTION_CONSENT_FORBIDDEN:\nif legal_basis != consent:\nnot exists g where g.name = check_consent"
+    },
+    {
+      "name": "DATA_PROCESSING_ENCRYPTION_FORBIDDEN",
+      "ocl": "context Trace\ninv DATA_PROCESSING_ENCRYPTION_FORBIDDEN:\nif data_category = STANDARD:\nnot exists g where g.name = encryption_applied",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_PROCESSING",
+        "encryption_applied"
+      ],
+      "context_terms": [
+        "data_category"
+      ],
+      "temporal_terms": [
+        "exists"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.75,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_PROCESSING_ENCRYPTION_FORBIDDEN"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_PROCESSING_ENCRYPTION_FORBIDDEN:\nif data_category = STANDARD:\nnot exists g where g.name = encryption_applied"
+    },
+    {
+      "name": "DATA_ACCESS_CONTROL_FORBIDDEN",
+      "ocl": "context Trace\ninv DATA_ACCESS_CONTROL_FORBIDDEN:\nif data_category not in {HEALTH, SPECIAL}:\nnot exists g where g.name = access_control_check",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_ACCESS",
+        "access_control_check"
+      ],
+      "context_terms": [
+        "data_category"
+      ],
+      "temporal_terms": [
+        "exists"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.5833,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_ACCESS_CONTROL_FORBIDDEN"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_ACCESS_CONTROL_FORBIDDEN:\nif data_category not in {HEALTH, SPECIAL}:\nnot exists g where g.name = access_control_check"
+    },
+    {
+      "name": "DATA_TRANSFER_THIRD_PARTY_FORBIDDEN",
+      "ocl": "context Trace\ninv DATA_TRANSFER_THIRD_PARTY_FORBIDDEN:\nif has_third_party_recipients = false:\nnot exists g where g.name = check_third_party_agreement",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_TRANSFER",
+        "check_third_party_agreement"
+      ],
+      "context_terms": [
+        "has_third_party_recipients"
+      ],
+      "temporal_terms": [
+        "exists"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.5833,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_TRANSFER_THIRD_PARTY_FORBIDDEN"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_TRANSFER_THIRD_PARTY_FORBIDDEN:\nif has_third_party_recipients = false:\nnot exists g where g.name = check_third_party_agreement"
+    },
+    {
+      "name": "DATA_TRANSFER_INTERNATIONAL_FORBIDDEN",
+      "ocl": "context Trace\ninv DATA_TRANSFER_INTERNATIONAL_FORBIDDEN:\nif international_transfer != \"third_country\":\nnot exists g where g.name = verify_international_safeguard",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\rules.pdf; C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_TRANSFER",
+        "verify_international_safeguard"
+      ],
+      "context_terms": [
+        "international_transfer"
+      ],
+      "temporal_terms": [
+        "exists"
+      ],
+      "complexity": 4,
+      "coverage_score": 1.25,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_TRANSFER_INTERNATIONAL_FORBIDDEN"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_TRANSFER_INTERNATIONAL_FORBIDDEN:\nif international_transfer != \"third_country\":\nnot exists g where g.name = verify_international_safeguard"
+    },
+    {
+      "name": "CASE_START_VERIFY_LEGAL_BASIS_DUPLICATED",
+      "ocl": "context Trace\ninv CASE_START_VERIFY_LEGAL_BASIS_DUPLICATED:\n    for all e where e.type = CASE_START:\n        events where name = CASE_START count <= 1",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_START",
+        "verify_legal_basis"
+      ],
+      "context_terms": [
+        "legal_basis"
+      ],
+      "temporal_terms": [
+        "for all"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.75,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "CASE_START_VERIFY_LEGAL_BASIS_DUPLICATED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv CASE_START_VERIFY_LEGAL_BASIS_DUPLICATED:\n    for all e where e.type = CASE_START:\n        events where name = CASE_START count <= 1"
+    },
+    {
+      "name": "CASE_END_MISSING_RETENTION_CONTEXT",
+      "ocl": "context Trace\ninv CASE_END_MISSING_RETENTION_CONTEXT:\n    for all e where e.type = CASE_END:\n        context.retention_period is not undefined",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_END"
+      ],
+      "context_terms": [
+        "retention_period"
+      ],
+      "temporal_terms": [
+        "for all"
+      ],
+      "complexity": 3,
+      "coverage_score": 0.3333,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "CASE_END_MISSING_RETENTION_CONTEXT"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv CASE_END_MISSING_RETENTION_CONTEXT:\n    for all e where e.type = CASE_END:\n        context.retention_period is not undefined"
+    },
+    {
+      "name": "DATA_COLLECTION_LEGAL_BASIS_FLOW",
+      "ocl": "context Trace\ninv DATA_COLLECTION_LEGAL_BASIS_FLOW:\n    for all e where e.type = CASE_START:\n        exists g where\n            g.name = CASE_START AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_START",
+        "DATA_COLLECTION"
+      ],
+      "context_terms": [
+        "legal_basis"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.45,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_COLLECTION_LEGAL_BASIS_FLOW"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_COLLECTION_LEGAL_BASIS_FLOW:\n    for all e where e.type = CASE_START:\n        exists g where\n            g.name = CASE_START AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    },
+    {
+      "name": "DATA_COLLECTION_PURPOSE_REQUIRED",
+      "ocl": "context Trace\ninv DATA_COLLECTION_PURPOSE_REQUIRED:\n    for all e where e.type = CASE_START:\n        exists g where\n            g.name = CASE_START AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "CASE_START",
+        "DATA_COLLECTION"
+      ],
+      "context_terms": [
+        "purpose"
+      ],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.45,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_COLLECTION_PURPOSE_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_COLLECTION_PURPOSE_REQUIRED:\n    for all e where e.type = CASE_START:\n        exists g where\n            g.name = CASE_START AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    },
+    {
+      "name": "DATA_PROCESSING_ENCRYPTION_REQUIRED",
+      "ocl": "context Trace\ninv DATA_PROCESSING_ENCRYPTION_REQUIRED:\n    for all e where e.type = DATA_PROCESSING:\n        not exists g where g.name = encryption_applied",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_PROCESSING",
+        "encryption_applied"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "exists",
+        "for all"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.75,
+      "status": "MODIFICADA",
+      "merge_group": "MERGED_DATA_PROCESSING_CA04E1F9",
+      "origin_rules": [
+        "DATA_PROCESSING_ENCRYPTION_REQUIRED",
+        "DATA_PROCESSING_LOG_REQUIRED"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_DATA_PROCESSING_CA04E1F9:\n    -- Refactors: DATA_PROCESSING_ENCRYPTION_REQUIRED, DATA_PROCESSING_LOG_REQUIRED\n    for all e where e.type belongs_to DATA_PROCESSING:\n        required controls {encryption_applied, log_processing_activity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "DATA_PROCESSING_LOG_REQUIRED",
+      "ocl": "context Trace\ninv DATA_PROCESSING_LOG_REQUIRED:\n    for all e where e.type = DATA_ACCESS:\n        exists g where\n            g.name = log_processing_activity AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_ACCESS",
+        "DATA_PROCESSING",
+        "log_processing_activity"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.5,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_DATA_PROCESSING_CA04E1F9",
+      "origin_rules": [
+        "DATA_PROCESSING_ENCRYPTION_REQUIRED",
+        "DATA_PROCESSING_LOG_REQUIRED"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_DATA_PROCESSING_CA04E1F9:\n    -- Refactors: DATA_PROCESSING_ENCRYPTION_REQUIRED, DATA_PROCESSING_LOG_REQUIRED\n    for all e where e.type belongs_to DATA_PROCESSING:\n        required controls {encryption_applied, log_processing_activity} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "DATA_ACCESS_CONTROL_DUPLICATED",
+      "ocl": "context Trace\ninv DATA_ACCESS_CONTROL_DUPLICATED:\n    for all e where e.type = DATA_ACCESS:\n        events where name = access_control_check count <= 1",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_ACCESS",
+        "access_control_check"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "for all"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.5833,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_ACCESS_CONTROL_DUPLICATED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_ACCESS_CONTROL_DUPLICATED:\n    for all e where e.type = DATA_ACCESS:\n        events where name = access_control_check count <= 1"
+    },
+    {
+      "name": "DATA_TRANSFER_THIRD_PARTY_REQUIRED",
+      "ocl": "context Trace\ninv DATA_TRANSFER_THIRD_PARTY_REQUIRED:\n    for all e where e.type = DATA_TRANSFER:\n        not exists g where g.name = check_third_party_agreement",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_TRANSFER",
+        "check_third_party_agreement"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "exists",
+        "for all"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.5833,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_DATA_TRANSFER_4F69B250",
+      "origin_rules": [
+        "DATA_TRANSFER_INTERNATIONAL_REQUIRED",
+        "DATA_TRANSFER_THIRD_PARTY_REQUIRED"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_DATA_TRANSFER_4F69B250:\n    -- Refactors: DATA_TRANSFER_INTERNATIONAL_REQUIRED, DATA_TRANSFER_THIRD_PARTY_REQUIRED\n    for all e where e.type belongs_to DATA_TRANSFER:\n        required controls {check_third_party_agreement} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "DATA_TRANSFER_INTERNATIONAL_REQUIRED",
+      "ocl": "context Trace\ninv DATA_TRANSFER_INTERNATIONAL_REQUIRED:\n    for all e where e.type = AUTOMATED_DECISION:\n        not exists g where g.name = check_third_party_agreement",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "AUTOMATED_DECISION",
+        "DATA_TRANSFER",
+        "check_third_party_agreement"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "exists",
+        "for all"
+      ],
+      "complexity": 4,
+      "coverage_score": 0.7833,
+      "status": "MODIFICADA",
+      "merge_group": "MERGED_DATA_TRANSFER_4F69B250",
+      "origin_rules": [
+        "DATA_TRANSFER_INTERNATIONAL_REQUIRED",
+        "DATA_TRANSFER_THIRD_PARTY_REQUIRED"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_DATA_TRANSFER_4F69B250:\n    -- Refactors: DATA_TRANSFER_INTERNATIONAL_REQUIRED, DATA_TRANSFER_THIRD_PARTY_REQUIRED\n    for all e where e.type belongs_to DATA_TRANSFER:\n        required controls {check_third_party_agreement} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "AUTOMATED_DECISION_DISCLOSURE_REQUIRED",
+      "ocl": "context Trace\ninv AUTOMATED_DECISION_DISCLOSURE_REQUIRED:\n    for all e where e.type = AUTOMATED_DECISION:\n        exists g where\n            g.name = automated_logic_disclosure AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "AUTOMATED_DECISION",
+        "automated_logic_disclosure"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.2,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "AUTOMATED_DECISION_DISCLOSURE_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv AUTOMATED_DECISION_DISCLOSURE_REQUIRED:\n    for all e where e.type = AUTOMATED_DECISION:\n        exists g where\n            g.name = automated_logic_disclosure AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    },
+    {
+      "name": "USER_RIGHT_REQUEST_RESPONSE_REQUIRED",
+      "ocl": "context Trace\ninv USER_RIGHT_REQUEST_RESPONSE_REQUIRED:\n    for all e where e.type = USER_RIGHT_REQUEST:\n        exists g where\n            g.name = respond_user_right AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "USER_RIGHT_REQUEST",
+        "respond_user_right"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.4242,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "USER_RIGHT_REQUEST_RESPONSE_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv USER_RIGHT_REQUEST_RESPONSE_REQUIRED:\n    for all e where e.type = USER_RIGHT_REQUEST:\n        exists g where\n            g.name = respond_user_right AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    },
+    {
+      "name": "USER_RIGHT_IDENTITY_VERIFICATION",
+      "ocl": "context Trace\ninv USER_RIGHT_IDENTITY_VERIFICATION:\n    for all e in events:\n        exists g where\n            g.name = respond_user_right AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "respond_user_right"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 6,
+      "coverage_score": 0.3333,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_ACCESS_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_ACCESS_COMPLIANCE:\n    for all e in events:\n        exists g where\n            g.name = provide_data_copy AND\n            g.position = AFTER AND\n            g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "provide_data_copy"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 6,
+      "coverage_score": 0.5,
+      "status": "MODIFICADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_PORTABILITY_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_PORTABILITY_COMPLIANCE:\n    for all e where e.type = OTHER:\n        exists g where\n            g.name = generate_interoperable_format AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "OTHER",
+        "generate_interoperable_format"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 1.5,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_OBJECTION_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_OBJECTION_COMPLIANCE:\n    for all e where e.type = AUTOMATED_DECISION:\n        exists g where\n            g.name = halt_processing_activities AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "AUTOMATED_DECISION",
+        "halt_processing_activities"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.7,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE:\n    for all e where e.type = AUTOMATED_DECISION:\n        exists g where\n            g.name = contest_automated_decision AND\n            g.position = AFTER AND\n            g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "AUTOMATED_DECISION",
+        "contest_automated_decision"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.7,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "USER_RIGHT_INFORMATION_COMPLIANCE",
+      "ocl": "context Trace\ninv USER_RIGHT_INFORMATION_COMPLIANCE:\n    for all e where e.type = DATA_DELETION:\n        exists g where\n            g.name = provide_transparency_details AND\n            g.position = AFTER AND\n            g.order > e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_DELETION",
+        "provide_transparency_details"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "AFTER",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.8333,
+      "status": "FUSIONADA",
+      "merge_group": "MERGED_USER_RIGHT_F8788A46",
+      "origin_rules": [
+        "USER_RIGHT_ACCESS_COMPLIANCE",
+        "USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE",
+        "USER_RIGHT_IDENTITY_VERIFICATION",
+        "USER_RIGHT_INFORMATION_COMPLIANCE",
+        "USER_RIGHT_OBJECTION_COMPLIANCE",
+        "USER_RIGHT_PORTABILITY_COMPLIANCE"
+      ],
+      "finding": "Conditions overlap with related rules and can be represented as a parameterized OCL invariant.",
+      "optimized_ocl": "context Trace\ninv MERGED_USER_RIGHT_F8788A46:\n    -- Refactors: USER_RIGHT_ACCESS_COMPLIANCE, USER_RIGHT_AUTOMATED_DECISION_REVIEW_COMPLIANCE, USER_RIGHT_IDENTITY_VERIFICATION, USER_RIGHT_INFORMATION_COMPLIANCE, USER_RIGHT_OBJECTION_COMPLIANCE, USER_RIGHT_PORTABILITY_COMPLIANCE\n    for all e where e.type belongs_to USER_RIGHT:\n        required controls {contest_automated_decision, generate_interoperable_format, halt_processing_activities, provide_data_copy, provide_transparency_details, respond_user_right} satisfy configured BEFORE/AFTER ordering"
+    },
+    {
+      "name": "DATA_DELETION_RETENTION_REQUIRED",
+      "ocl": "context Trace\ninv DATA_DELETION_RETENTION_REQUIRED:\n    for all e where e.type = DATA_DELETION:\n        exists g where\n            g.name = erase_data AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_DELETION",
+        "erase_data"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.8333,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_DELETION_RETENTION_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_DELETION_RETENTION_REQUIRED:\n    for all e where e.type = DATA_DELETION:\n        exists g where\n            g.name = erase_data AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    },
+    {
+      "name": "DATA_DELETION_ERASE_REQUIRED",
+      "ocl": "context Trace\ninv DATA_DELETION_ERASE_REQUIRED:\n    for all e where e.type = DATA_DELETION:\n        exists g where\n            g.name = erase_data AND\n            g.position = BEFORE AND\n            g.order < e.order",
+      "source": "C:\\Users\\Andres.Aguilar\\OneDrive - Universidad de Castilla-La Mancha\\Escritorio\\gdpr_trace\\app\\validation\\validators\\gdpr_enrichment_validator.py",
+      "events": [
+        "DATA_DELETION",
+        "erase_data"
+      ],
+      "context_terms": [],
+      "temporal_terms": [
+        "BEFORE",
+        "exists",
+        "for all",
+        "order",
+        "position"
+      ],
+      "complexity": 8,
+      "coverage_score": 0.8333,
+      "status": "CORRECTA",
+      "merge_group": "",
+      "origin_rules": [
+        "DATA_DELETION_ERASE_REQUIRED"
+      ],
+      "finding": "Rule is syntactically consistent and aligned with the implemented validator.",
+      "optimized_ocl": "context Trace\ninv DATA_DELETION_ERASE_REQUIRED:\n    for all e where e.type = DATA_DELETION:\n        exists g where\n            g.name = erase_data AND\n            g.position = BEFORE AND\n            g.order < e.order"
+    }
+  ],
+  "suggested_rules": [
+    {
+      "name": "DATA_BREACH_NOTIFICATION_REQUIRED",
+      "reason": "No explicit rule covers GDPR Articles 33 and 34 breach notification timelines.",
+      "ocl": "context Trace\ninv DATA_BREACH_NOTIFICATION_REQUIRED:\n    for all e where e.name = detect_personal_data_breach:\n        exists g where g.name = notify_supervisory_authority AND g.order > e.order"
+    },
+    {
+      "name": "CONSENT_WITHDRAWAL_STOP_PROCESSING",
+      "reason": "Consent withdrawal is not explicitly connected to halting subsequent processing.",
+      "ocl": "context Trace\ninv CONSENT_WITHDRAWAL_STOP_PROCESSING:\n    for all e where e.name = withdraw_consent:\n        not exists p where p.type = DATA_PROCESSING AND p.order > e.order"
+    },
+    {
+      "name": "DPIA_HIGH_RISK_PROCESSING_REQUIRED",
+      "reason": "High-risk or special-category processing should be linked to a DPIA evidence event.",
+      "ocl": "context Trace\ninv DPIA_HIGH_RISK_PROCESSING_REQUIRED:\n    if context.data_category in {SPECIAL, HEALTH}:\n        exists g where g.name = perform_dpia AND g.order < first(DATA_PROCESSING).order"
+    }
+  ]
+}

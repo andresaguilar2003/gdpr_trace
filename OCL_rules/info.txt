@@ -1,0 +1,1 @@
+This folder contains the OCL rule catalogue used to specify and validate GDPR compliance requirements over enriched event-log graphs.

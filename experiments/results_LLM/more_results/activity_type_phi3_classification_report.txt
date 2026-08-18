@@ -1,0 +1,14 @@
+                    precision    recall  f1-score   support
+
+AUTOMATED_DECISION       0.00      0.00      0.00         6
+       DATA_ACCESS       0.00      0.00      0.00         0
+   DATA_COLLECTION       1.00      0.33      0.50         3
+     DATA_DELETION       0.00      0.00      0.00         0
+   DATA_PROCESSING       1.00      0.33      0.50        18
+     DATA_TRANSFER       0.00      0.00      0.00         2
+             OTHER       0.00      0.00      0.00         0
+STORAGE_MANAGEMENT       0.00      0.00      0.00         8
+
+          accuracy                           0.19        37
+         macro avg       0.25      0.08      0.12        37
+      weighted avg       0.57      0.19      0.28        37

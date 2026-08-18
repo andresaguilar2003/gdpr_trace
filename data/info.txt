@@ -1,0 +1,1 @@
+This folder stores the event logs used by the system, including input logs to be processed and output logs generated after enrichment and validation.
